@@ -123,12 +123,17 @@ lib/
 - **Private members**: Prefix with underscore (e.g., `_validateMove()`)
 - **Widget organization**: Place widgets in `presentation/widgets/`, screens in `presentation/screens/`
 
-### Testing Strategy
-- **Unit tests**: Test all business logic in `domain/` layer
+### Testing Strategy (Test-Driven Development)
+- **TDD Workflow**: Write tests BEFORE implementation code
+  1. Write failing test (Red)
+  2. Write minimal code to pass (Green)
+  3. Refactor while keeping tests green (Refactor)
+- **Unit tests**: Test all business logic in `domain/` layer (>80% coverage)
 - **Widget tests**: Test UI components in isolation
 - **Integration tests**: Test complete user flows (placed in `integration_test/` directory)
 - **Test file naming**: Match source files with `_test.dart` suffix (e.g., `game_board_test.dart` for `game_board.dart`)
 - **Mock data**: Create test fixtures in `test/fixtures/`
+- **Run tests frequently**: `flutter test --watch` during development
 
 ### Performance Considerations
 - **Solver algorithms**: Implement backtracking with optimizations (naked singles, hidden singles)
@@ -161,13 +166,22 @@ lib/
 - Run tests and linting before pushing
 - Every push to main triggers automatic version bumping and release
 
+### Development Workflow (TDD)
+1. **Write test first**: Create or update test file in `test/` directory
+2. **Run test** to see it fail: `flutter test path/to/test_file.dart`
+3. **Write minimal code**: Implement just enough to pass the test
+4. **Run test** to see it pass (green)
+5. **Refactor**: Clean up code while keeping tests green
+6. **Commit**: Use conventional commits
+
 ### Commit Message Format
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ```bash
 feat(scope): add new feature      # Minor version bump
 fix(scope): fix bug               # Patch version bump
+test: add tests for feature       # No version bump
 docs: update documentation        # No version bump
 chore: update dependencies        # No version bump
 ```
 
-See [documentation/VERSIONING.md](../documentation/VERSIONING.md) for complete guidelines.
+See [documentation/VERSIONING.md](../documentation/VERSIONING.md) and [documentation/TDD_GUIDE.md](../documentation/TDD_GUIDE.md) for complete guidelines.
