@@ -2,7 +2,7 @@ name: sudoku
 description: A full-featured cross-platform Sudoku game built with Flutter.
 publish_to: 'none'
 
-version: 0.1.0+1
+version: 0.2.0
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
