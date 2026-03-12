@@ -41,7 +41,11 @@ See [.github/copilot-instructions.md](.github/copilot-instructions.md) for detai
 ### Quick Commands
 
 ```bash
-# Run tests
+# Run tests (TDD workflow)
+flutter test --watch                    # Continuous testing during development
+flutter test path/to/test_file.dart    # Run specific test
+
+# Run all tests
 flutter test
 
 # Run with coverage
@@ -61,6 +65,7 @@ This project uses automated semantic versioning based on [Conventional Commits](
 ## Documentation
 
 - [Project Requirements](documentation/PROJECT_REQUIREMENTS.md) - Full requirements specification
+- [TDD Guide](documentation/TDD_GUIDE.md) - Test-Driven Development workflow and examples
 - [Git Workflow](documentation/GIT_WORKFLOW.md) - Trunk-based development workflow
 - [Versioning Guide](documentation/VERSIONING.md) - Commit conventions and version management
 - [Copilot Instructions](.github/copilot-instructions.md) - Development guidelines
