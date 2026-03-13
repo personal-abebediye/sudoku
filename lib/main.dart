@@ -3,8 +3,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'features/game/data/services/game_persistence_service.dart';
+import 'features/game/data/services/statistics_service.dart';
 import 'features/game/domain/entities/board.dart';
 import 'features/game/domain/entities/game_state.dart';
+import 'features/game/domain/entities/game_statistics.dart';
 import 'features/game/domain/entities/game_timer.dart';
 import 'features/game/domain/entities/move.dart';
 import 'features/game/domain/entities/move_history.dart';
@@ -57,6 +59,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   final _moveHistory = MoveHistory();
   final _gameTimer = GameTimer();
   final _persistenceService = GamePersistenceService();
+  final _statisticsService = StatisticsService();
   Difficulty _currentDifficulty = Difficulty.easy;
   Board? _board;
   Board? _originalBoard; // Store original for restart
@@ -153,6 +156,93 @@ class _GameScreenState extends ConsumerState<GameScreen>
       }
     }
     _errorCells = errors;
+
+    // Check if puzzle is complete
+    if (_isPuzzleComplete()) {
+      _handlePuzzleCompletion();
+    }
+  }
+
+  bool _isPuzzleComplete() {
+    if (_board == null) {
+      return false;
+    }
+
+    // Check all cells are filled
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (_board!.cells[row][col].isEmpty) {
+          return false;
+        }
+      }
+    }
+
+    // Check no errors
+    return _errorCells.isEmpty;
+  }
+
+  Future<void> _handlePuzzleCompletion() async {
+    // Stop timer
+    _gameTimer.pause();
+
+    // Load and update statistics
+    final stats = await _statisticsService.loadStatistics();
+    final completionTime = _gameTimer.elapsed.inSeconds;
+    final updatedStats = stats.recordCompletion(_currentDifficulty, completionTime);
+    await _statisticsService.saveStatistics(updatedStats);
+
+    // Clear saved game (puzzle is complete)
+    await _persistenceService.clearGame();
+
+    // Show completion dialog
+    if (mounted) {
+      _showCompletionDialog(completionTime);
+    }
+  }
+
+  void _showCompletionDialog(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    final timeStr = '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('🎉 Puzzle Complete!'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.check_circle_outline,
+                size: 64,
+                color: Colors.green,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Time: $timeStr',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Difficulty: ${_getDifficultyLabel(_currentDifficulty)}',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _handleRefresh();
+              },
+              child: const Text('New Game'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _handleNumberSelected(int number) {
