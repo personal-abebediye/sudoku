@@ -58,13 +58,14 @@ class _GameScreenState extends ConsumerState<GameScreen>
   final _gameTimer = GameTimer();
   final _persistenceService = GamePersistenceService();
   Difficulty _currentDifficulty = Difficulty.easy;
-  late Board _board;
-  late Board _originalBoard; // Store original for restart
+  Board? _board;
+  Board? _originalBoard; // Store original for restart
   int? _selectedRow;
   int? _selectedCol;
   Set<String> _errorCells = {};
   bool _isNotesMode = false;
   bool _isPaused = false;
+  bool _isLoading = true;
   final Map<String, Set<int>> _notes = {};
 
   @override
@@ -89,11 +90,15 @@ class _GameScreenState extends ConsumerState<GameScreen>
         _gameTimer.setElapsedForTesting(
           Duration(seconds: savedGame.elapsedSeconds),
         );
+        _isLoading = false;
       });
     } else {
       // Create new game
-      _board = _generator.generatePuzzle(_currentDifficulty);
-      _originalBoard = _board;
+      setState(() {
+        _board = _generator.generatePuzzle(_currentDifficulty);
+        _originalBoard = _board;
+        _isLoading = false;
+      });
     }
 
     _gameTimer.start();
@@ -120,9 +125,13 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 
   void _saveGameState() {
+    if (_board == null || _originalBoard == null) {
+      return;
+    }
+
     final gameState = GameState(
-      board: _board,
-      originalBoard: _originalBoard,
+      board: _board!,
+      originalBoard: _originalBoard!,
       difficulty: _currentDifficulty,
       elapsedSeconds: _gameTimer.elapsed.inSeconds,
       notes: Map.from(_notes),
@@ -131,10 +140,14 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 
   void _updateErrors() {
+    if (_board == null) {
+      return;
+    }
+
     final errors = <String>{};
     for (var row = 0; row < 9; row++) {
       for (var col = 0; col < 9; col++) {
-        if (_board.hasConflict(row, col)) {
+        if (_board!.hasConflict(row, col)) {
           errors.add('$row,$col');
         }
       }
@@ -143,7 +156,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 
   void _handleNumberSelected(int number) {
-    if (_selectedRow == null || _selectedCol == null) {
+    if (_selectedRow == null || _selectedCol == null || _board == null) {
       return;
     }
 
@@ -151,7 +164,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     final col = _selectedCol!;
 
     // Don't allow input on fixed cells
-    if (_board.cells[row][col].isFixed) {
+    if (_board!.cells[row][col].isFixed) {
       return;
     }
 
@@ -178,7 +191,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     }
 
     // Normal mode: set cell value
-    final oldValue = _board.cells[row][col].value;
+    final oldValue = _board!.cells[row][col].value;
 
     // Only record move if value actually changes
     if (oldValue != number) {
@@ -191,7 +204,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     }
 
     setState(() {
-      _board = _board.setCell(row, col, number);
+      _board = _board!.setCell(row, col, number);
 
       // Clear notes when value is set
       if (number != 0) {
@@ -205,12 +218,12 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
   void _handleUndo() {
     final move = _moveHistory.undo();
-    if (move == null) {
+    if (move == null || _board == null) {
       return;
     }
 
     setState(() {
-      _board = _board.setCell(move.row, move.col, move.oldValue);
+      _board = _board!.setCell(move.row, move.col, move.oldValue);
       _updateErrors();
     });
     _saveGameState(); // Save after undo
@@ -218,12 +231,12 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
   void _handleRedo() {
     final move = _moveHistory.redo();
-    if (move == null) {
+    if (move == null || _board == null) {
       return;
     }
 
     setState(() {
-      _board = _board.setCell(move.row, move.col, move.newValue);
+      _board = _board!.setCell(move.row, move.col, move.newValue);
       _updateErrors();
     });
     _saveGameState(); // Save after redo
@@ -261,6 +274,10 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 
   void _handleRestart() {
+    if (_originalBoard == null) {
+      return;
+    }
+
     setState(() {
       _board = _originalBoard; // Reset to original puzzle
       _selectedRow = null;
@@ -424,6 +441,18 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Show loading screen while game loads
+    if (_isLoading || _board == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Sudoku'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sudoku'),
@@ -487,7 +516,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
                         child: AspectRatio(
                           aspectRatio: 1,
                           child: SudokuBoardWidget(
-                            board: _board,
+                            board: _board!,
                             selectedRow: _selectedRow,
                             selectedCol: _selectedCol,
                             errorCells: _errorCells,
@@ -508,8 +537,9 @@ class _GameScreenState extends ConsumerState<GameScreen>
                       child: NumberPadWidget(
                         onNumberSelected: _handleNumberSelected,
                         selectedNumber: _selectedRow != null &&
-                                _selectedCol != null
-                            ? _board.cells[_selectedRow!][_selectedCol!].value
+                                _selectedCol != null &&
+                                _board != null
+                            ? _board!.cells[_selectedRow!][_selectedCol!].value
                             : null,
                       ),
                     ),
