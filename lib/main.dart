@@ -51,6 +51,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   int? _selectedRow;
   int? _selectedCol;
   Set<String> _errorCells = {};
+  bool _isNotesMode = false;
+  Map<String, Set<int>> _notes = {};
 
   @override
   void initState() {
@@ -103,6 +105,28 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       return;
     }
 
+    // Notes mode: toggle note
+    if (_isNotesMode) {
+      setState(() {
+        final key = '$row,$col';
+        _notes.putIfAbsent(key, () => <int>{});
+
+        if (number == 0) {
+          // Clear button clears all notes for this cell
+          _notes[key]!.clear();
+        } else {
+          // Toggle the note
+          if (_notes[key]!.contains(number)) {
+            _notes[key]!.remove(number);
+          } else {
+            _notes[key]!.add(number);
+          }
+        }
+      });
+      return;
+    }
+
+    // Normal mode: set cell value
     final oldValue = _board.cells[row][col].value;
 
     // Only record move if value actually changes
@@ -117,6 +141,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
     setState(() {
       _board = _board.setCell(row, col, number);
+
+      // Clear notes when value is set
+      if (number != 0) {
+        _notes.remove('$row,$col');
+      }
+
       _updateErrors();
     });
   }
@@ -152,6 +182,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       _selectedCol = null;
       _errorCells = {};
       _moveHistory.clear(); // Clear history when starting new puzzle
+      _notes.clear(); // Clear all notes when starting new puzzle
       _gameTimer
         ..reset() // Reset timer when starting new puzzle
         ..start(); // Start fresh timer
@@ -166,6 +197,16 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         actions: [
           // Timer Display
           TimerDisplay(timer: _gameTimer),
+          IconButton(
+            icon: Icon(_isNotesMode ? Icons.edit : Icons.edit_outlined),
+            tooltip: _isNotesMode ? 'Notes Mode (ON)' : 'Notes Mode (OFF)',
+            onPressed: () {
+              setState(() {
+                _isNotesMode = !_isNotesMode;
+              });
+            },
+            color: _isNotesMode ? Theme.of(context).colorScheme.primary : null,
+          ),
           IconButton(
             icon: const Icon(Icons.undo),
             tooltip: 'Undo',
@@ -200,6 +241,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       selectedRow: _selectedRow,
                       selectedCol: _selectedCol,
                       errorCells: _errorCells,
+                      notes: _notes,
                       onCellSelected: (row, col) {
                         setState(() {
                           _selectedRow = row;

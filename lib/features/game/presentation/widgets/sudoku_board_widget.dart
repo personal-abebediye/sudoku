@@ -10,6 +10,7 @@ class SudokuBoardWidget extends StatelessWidget {
     this.selectedRow,
     this.selectedCol,
     this.errorCells = const {},
+    this.notes = const {},
     this.onCellSelected,
     super.key,
   });
@@ -19,6 +20,7 @@ class SudokuBoardWidget extends StatelessWidget {
   final int? selectedCol;
   final Set<String>
       errorCells; // Set of "row,col" strings for cells with errors
+  final Map<String, Set<int>> notes; // Notes for each cell
   final void Function(int row, int col)? onCellSelected;
 
   @override
@@ -46,6 +48,7 @@ class SudokuBoardWidget extends StatelessWidget {
                 final cell = board.cells[row][col];
                 final isSelected = row == selectedRow && col == selectedCol;
                 final hasError = errorCells.contains('$row,$col');
+                final cellNotes = notes['$row,$col'] ?? {};
 
                 return SudokuCellWidget(
                   cell: cell,
@@ -53,6 +56,7 @@ class SudokuBoardWidget extends StatelessWidget {
                   col: col,
                   isSelected: isSelected,
                   hasError: hasError,
+                  notes: cellNotes,
                   onTap: onCellSelected != null
                       ? () => onCellSelected!(row, col)
                       : null,
@@ -74,6 +78,7 @@ class SudokuCellWidget extends StatelessWidget {
     required this.col,
     this.isSelected = false,
     this.hasError = false,
+    this.notes = const {},
     this.onTap,
     super.key,
   });
@@ -83,6 +88,7 @@ class SudokuCellWidget extends StatelessWidget {
   final int col;
   final bool isSelected;
   final bool hasError;
+  final Set<int> notes;
   final VoidCallback? onTap;
 
   @override
@@ -122,7 +128,7 @@ class SudokuCellWidget extends StatelessWidget {
         ),
         child: Center(
           child: cell.isEmpty
-              ? null
+              ? (notes.isNotEmpty ? _buildNotesGrid(context) : null)
               : Text(
                   '${cell.value}',
                   style: theme.textTheme.headlineSmall?.copyWith(
@@ -134,6 +140,36 @@ class SudokuCellWidget extends StatelessWidget {
                   ),
                 ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildNotesGrid(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.all(2),
+      child: GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+        ),
+        itemCount: 9,
+        itemBuilder: (context, index) {
+          final number = index + 1;
+          final hasNote = notes.contains(number);
+
+          return Center(
+            child: Text(
+              hasNote ? '$number' : '',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colorScheme.onSurface.withAlpha(178), // 70% opacity
+                fontSize: 10,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
