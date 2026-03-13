@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
+import 'features/game/domain/entities/move.dart';
+import 'features/game/domain/entities/move_history.dart';
 import 'features/game/domain/services/puzzle_generator.dart';
 import 'features/game/presentation/widgets/number_pad_widget.dart';
 import 'features/game/presentation/widgets/sudoku_board_widget.dart';
@@ -41,6 +43,7 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   final _generator = PuzzleGenerator();
+  final _moveHistory = MoveHistory();
   late var _board = _generator.generatePuzzle(Difficulty.easy);
   int? _selectedRow;
   int? _selectedCol;
@@ -63,14 +66,63 @@ class _GameScreenState extends State<GameScreen> {
       return;
     }
 
+    final row = _selectedRow!;
+    final col = _selectedCol!;
+
     // Don't allow input on fixed cells
-    if (_board.cells[_selectedRow!][_selectedCol!].isFixed) {
+    if (_board.cells[row][col].isFixed) {
+      return;
+    }
+
+    final oldValue = _board.cells[row][col].value;
+
+    // Only record move if value actually changes
+    if (oldValue != number) {
+      _moveHistory.push(Move(
+        row: row,
+        col: col,
+        oldValue: oldValue,
+        newValue: number,
+      ));
+    }
+
+    setState(() {
+      _board = _board.setCell(row, col, number);
+      _updateErrors();
+    });
+  }
+
+  void _handleUndo() {
+    final move = _moveHistory.undo();
+    if (move == null) {
       return;
     }
 
     setState(() {
-      _board = _board.setCell(_selectedRow!, _selectedCol!, number);
+      _board = _board.setCell(move.row, move.col, move.oldValue);
       _updateErrors();
+    });
+  }
+
+  void _handleRedo() {
+    final move = _moveHistory.redo();
+    if (move == null) {
+      return;
+    }
+
+    setState(() {
+      _board = _board.setCell(move.row, move.col, move.newValue);
+      _updateErrors();
+    });
+  }
+
+  void _handleRefresh() {
+    setState(() {
+      _board = _generator.generatePuzzle(Difficulty.easy);
+      _selectedRow = null;
+      _selectedCol = null;
+      _errorCells = {};
+      _moveHistory.clear(); // Clear history when starting new puzzle
     });
   }
 
@@ -81,15 +133,19 @@ class _GameScreenState extends State<GameScreen> {
         title: const Text('Sudoku'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.undo),
+            tooltip: 'Undo',
+            onPressed: _moveHistory.canUndo ? _handleUndo : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.redo),
+            tooltip: 'Redo',
+            onPressed: _moveHistory.canRedo ? _handleRedo : null,
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              setState(() {
-                _board = _generator.generatePuzzle(Difficulty.easy);
-                _selectedRow = null;
-                _selectedCol = null;
-                _errorCells = {};
-              });
-            },
+            tooltip: 'New Puzzle',
+            onPressed: _handleRefresh,
           ),
         ],
       ),

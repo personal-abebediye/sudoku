@@ -17,7 +17,7 @@ void main() {
 
     test('should push move to undo stack', () {
       const move = Move(row: 0, col: 0, oldValue: 0, newValue: 5);
-      
+
       history.push(move);
 
       expect(history.canUndo, isTrue);
@@ -26,7 +26,7 @@ void main() {
 
     test('should undo last move', () {
       const move = Move(row: 1, col: 2, oldValue: 0, newValue: 7);
-      
+
       history.push(move);
       final undoneMove = history.undo();
 
@@ -37,7 +37,7 @@ void main() {
 
     test('should redo undone move', () {
       const move = Move(row: 3, col: 4, oldValue: 5, newValue: 8);
-      
+
       history.push(move);
       history.undo();
       final redoneMove = history.redo();
@@ -69,11 +69,11 @@ void main() {
       history.push(move1);
       history.push(move2);
       history.undo(); // move2 in redo stack
-      
+
       expect(history.canRedo, isTrue);
-      
+
       history.push(move3); // Should clear redo stack
-      
+
       expect(history.canRedo, isFalse);
       expect(history.canUndo, isTrue);
     });
@@ -148,15 +148,15 @@ void main() {
       const move = Move(row: 0, col: 0, oldValue: 0, newValue: 5);
 
       history.push(move);
-      
+
       history.undo();
       expect(history.canUndo, isFalse);
       expect(history.canRedo, isTrue);
-      
+
       history.redo();
       expect(history.canUndo, isTrue);
       expect(history.canRedo, isFalse);
-      
+
       history.undo();
       expect(history.canUndo, isFalse);
       expect(history.canRedo, isTrue);
