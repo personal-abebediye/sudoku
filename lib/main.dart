@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
+import 'features/game/data/services/game_persistence_service.dart';
 import 'features/game/domain/entities/board.dart';
+import 'features/game/domain/entities/game_state.dart';
 import 'features/game/domain/entities/game_timer.dart';
 import 'features/game/domain/entities/move.dart';
 import 'features/game/domain/entities/move_history.dart';
@@ -54,6 +56,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   final _generator = PuzzleGenerator();
   final _moveHistory = MoveHistory();
   final _gameTimer = GameTimer();
+  final _persistenceService = GamePersistenceService();
   Difficulty _currentDifficulty = Difficulty.easy;
   late Board _board;
   late Board _originalBoard; // Store original for restart
@@ -67,10 +70,33 @@ class _GameScreenState extends ConsumerState<GameScreen>
   @override
   void initState() {
     super.initState();
-    _board = _generator.generatePuzzle(_currentDifficulty);
-    _originalBoard = _board;
+    _loadOrCreateGame();
     WidgetsBinding.instance.addObserver(this);
-    _gameTimer.start(); // Start timer when game loads
+  }
+
+  Future<void> _loadOrCreateGame() async {
+    final savedGame = await _persistenceService.loadGame();
+
+    if (savedGame != null) {
+      // Resume saved game
+      setState(() {
+        _board = savedGame.board;
+        _originalBoard = savedGame.originalBoard;
+        _currentDifficulty = savedGame.difficulty;
+        _notes
+          ..clear()
+          ..addAll(savedGame.notes);
+        _gameTimer.setElapsedForTesting(
+          Duration(seconds: savedGame.elapsedSeconds),
+        );
+      });
+    } else {
+      // Create new game
+      _board = _generator.generatePuzzle(_currentDifficulty);
+      _originalBoard = _board;
+    }
+
+    _gameTimer.start();
   }
 
   @override
@@ -85,11 +111,23 @@ class _GameScreenState extends ConsumerState<GameScreen>
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       _gameTimer.pause();
+      _saveGameState(); // Save when app goes to background
     }
     // Resume timer when app comes back to foreground
     else if (state == AppLifecycleState.resumed) {
       _gameTimer.resume();
     }
+  }
+
+  void _saveGameState() {
+    final gameState = GameState(
+      board: _board,
+      originalBoard: _originalBoard,
+      difficulty: _currentDifficulty,
+      elapsedSeconds: _gameTimer.elapsed.inSeconds,
+      notes: Map.from(_notes),
+    );
+    _persistenceService.saveGame(gameState);
   }
 
   void _updateErrors() {
@@ -135,6 +173,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
           }
         }
       });
+      _saveGameState(); // Save after notes change
       return;
     }
 
@@ -161,6 +200,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
       _updateErrors();
     });
+    _saveGameState(); // Save after move
   }
 
   void _handleUndo() {
@@ -173,6 +213,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
       _board = _board.setCell(move.row, move.col, move.oldValue);
       _updateErrors();
     });
+    _saveGameState(); // Save after undo
   }
 
   void _handleRedo() {
@@ -185,6 +226,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
       _board = _board.setCell(move.row, move.col, move.newValue);
       _updateErrors();
     });
+    _saveGameState(); // Save after redo
   }
 
   void _handleRefresh() {
@@ -201,6 +243,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
         ..reset() // Reset timer when starting new puzzle
         ..start(); // Start fresh timer
     });
+    _saveGameState(); // Save new game
   }
 
   void _handlePause() {
@@ -230,6 +273,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
         ..reset()
         ..start(); // Restart timer
     });
+    _saveGameState(); // Save restarted game
   }
 
   void _showThemeDialog() {

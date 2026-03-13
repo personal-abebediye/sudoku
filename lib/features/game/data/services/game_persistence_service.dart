@@ -22,11 +22,11 @@ class GamePersistenceService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString(_currentGameKey);
-      
+
       if (jsonString == null) {
         return null;
       }
-      
+
       return GameState.fromJsonString(jsonString);
     } catch (e) {
       // Log error in production
