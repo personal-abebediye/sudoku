@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
+import 'features/game/domain/entities/board.dart';
 import 'features/game/domain/entities/game_timer.dart';
 import 'features/game/domain/entities/move.dart';
 import 'features/game/domain/entities/move_history.dart';
@@ -47,16 +48,21 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   final _generator = PuzzleGenerator();
   final _moveHistory = MoveHistory();
   final _gameTimer = GameTimer();
-  late var _board = _generator.generatePuzzle(Difficulty.easy);
+  Difficulty _currentDifficulty = Difficulty.easy;
+  late Board _board;
+  late Board _originalBoard; // Store original for restart
   int? _selectedRow;
   int? _selectedCol;
   Set<String> _errorCells = {};
   bool _isNotesMode = false;
+  bool _isPaused = false;
   Map<String, Set<int>> _notes = {};
 
   @override
   void initState() {
     super.initState();
+    _board = _generator.generatePuzzle(_currentDifficulty);
+    _originalBoard = _board;
     WidgetsBinding.instance.addObserver(this);
     _gameTimer.start(); // Start timer when game loads
   }
@@ -177,16 +183,104 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   void _handleRefresh() {
     setState(() {
-      _board = _generator.generatePuzzle(Difficulty.easy);
+      _board = _generator.generatePuzzle(_currentDifficulty);
+      _originalBoard = _board; // Store original for restart
       _selectedRow = null;
       _selectedCol = null;
       _errorCells = {};
       _moveHistory.clear(); // Clear history when starting new puzzle
       _notes.clear(); // Clear all notes when starting new puzzle
+      _isPaused = false; // Unpause if paused
       _gameTimer
         ..reset() // Reset timer when starting new puzzle
         ..start(); // Start fresh timer
     });
+  }
+
+  void _handlePause() {
+    setState(() {
+      _isPaused = true;
+      _gameTimer.pause();
+    });
+  }
+
+  void _handleResume() {
+    setState(() {
+      _isPaused = false;
+      _gameTimer.resume();
+    });
+  }
+
+  void _handleRestart() {
+    setState(() {
+      _board = _originalBoard; // Reset to original puzzle
+      _selectedRow = null;
+      _selectedCol = null;
+      _errorCells = {};
+      _moveHistory.clear(); // Clear all moves
+      _notes.clear(); // Clear all notes
+      _isPaused = false; // Unpause if paused
+      _gameTimer
+        ..reset()
+        ..start(); // Restart timer
+    });
+  }
+
+  void _showDifficultyDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Difficulty'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: Difficulty.values.map((difficulty) {
+              return RadioListTile<Difficulty>(
+                title: Text(_getDifficultyLabel(difficulty)),
+                subtitle: Text(_getDifficultySubtitle(difficulty)),
+                value: difficulty,
+                groupValue: _currentDifficulty,
+                onChanged: (Difficulty? value) {
+                  if (value != null) {
+                    Navigator.of(context).pop();
+                    setState(() {
+                      _currentDifficulty = value;
+                    });
+                    _handleRefresh();
+                  }
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  String _getDifficultyLabel(Difficulty difficulty) {
+    switch (difficulty) {
+      case Difficulty.easy:
+        return 'Easy';
+      case Difficulty.medium:
+        return 'Medium';
+      case Difficulty.hard:
+        return 'Hard';
+      case Difficulty.expert:
+        return 'Expert';
+    }
+  }
+
+  String _getDifficultySubtitle(Difficulty difficulty) {
+    switch (difficulty) {
+      case Difficulty.easy:
+        return '40-45 clues';
+      case Difficulty.medium:
+        return '30-35 clues';
+      case Difficulty.hard:
+        return '25-30 clues';
+      case Difficulty.expert:
+        return '20-25 clues';
+    }
   }
 
   @override
@@ -218,53 +312,105 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             onPressed: _moveHistory.canRedo ? _handleRedo : null,
           ),
           IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'New Puzzle',
-            onPressed: _handleRefresh,
+            icon: const Icon(Icons.add),
+            tooltip: 'New Game',
+            onPressed: _showDifficultyDialog,
+          ),
+          IconButton(
+            icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
+            tooltip: _isPaused ? 'Resume' : 'Pause',
+            onPressed: _isPaused ? _handleResume : _handlePause,
+          ),
+          IconButton(
+            icon: const Icon(Icons.restart_alt),
+            tooltip: 'Restart Puzzle',
+            onPressed: _handleRestart,
           ),
         ],
       ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Sudoku Board
-              Expanded(
-                flex: 2,
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: SudokuBoardWidget(
-                      board: _board,
-                      selectedRow: _selectedRow,
-                      selectedCol: _selectedCol,
-                      errorCells: _errorCells,
-                      notes: _notes,
-                      onCellSelected: (row, col) {
-                        setState(() {
-                          _selectedRow = row;
-                          _selectedCol = col;
-                        });
-                      },
+          child: _isPaused
+              ? _buildPausedOverlay()
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Sudoku Board
+                    Expanded(
+                      flex: 2,
+                      child: Center(
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: SudokuBoardWidget(
+                            board: _board,
+                            selectedRow: _selectedRow,
+                            selectedCol: _selectedCol,
+                            errorCells: _errorCells,
+                            notes: _notes,
+                            onCellSelected: (row, col) {
+                              setState(() {
+                                _selectedRow = row;
+                                _selectedCol = col;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 24),
+                    // Number Pad
+                    Expanded(
+                      child: NumberPadWidget(
+                        onNumberSelected: _handleNumberSelected,
+                        selectedNumber: _selectedRow != null &&
+                                _selectedCol != null
+                            ? _board.cells[_selectedRow!][_selectedCol!].value
+                            : null,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 24),
-              // Number Pad
-              Expanded(
-                child: NumberPadWidget(
-                  onNumberSelected: _handleNumberSelected,
-                  selectedNumber: _selectedRow != null && _selectedCol != null
-                      ? _board.cells[_selectedRow!][_selectedCol!].value
-                      : null,
-                ),
-              ),
-            ],
-          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPausedOverlay() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.pause_circle_outline,
+            size: 120,
+            color: colorScheme.primary,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Game Paused',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Tap Resume to continue',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 32),
+          FilledButton.icon(
+            onPressed: _handleResume,
+            icon: const Icon(Icons.play_arrow),
+            label: const Text('Resume Game'),
+          ),
+        ],
       ),
     );
   }
