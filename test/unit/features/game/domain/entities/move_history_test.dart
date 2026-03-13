@@ -38,8 +38,9 @@ void main() {
     test('should redo undone move', () {
       const move = Move(row: 3, col: 4, oldValue: 5, newValue: 8);
 
-      history.push(move);
-      history.undo();
+      history
+        ..push(move)
+        ..undo();
       final redoneMove = history.redo();
 
       expect(redoneMove, equals(move));
@@ -66,9 +67,10 @@ void main() {
       const move2 = Move(row: 1, col: 1, oldValue: 0, newValue: 2);
       const move3 = Move(row: 2, col: 2, oldValue: 0, newValue: 3);
 
-      history.push(move1);
-      history.push(move2);
-      history.undo(); // move2 in redo stack
+      history
+        ..push(move1)
+        ..push(move2)
+        ..undo(); // move2 in redo stack
 
       expect(history.canRedo, isTrue);
 
@@ -83,9 +85,10 @@ void main() {
       const move2 = Move(row: 1, col: 1, oldValue: 0, newValue: 2);
       const move3 = Move(row: 2, col: 2, oldValue: 0, newValue: 3);
 
-      history.push(move1);
-      history.push(move2);
-      history.push(move3);
+      history
+        ..push(move1)
+        ..push(move2)
+        ..push(move3);
 
       expect(history.undo(), equals(move3));
       expect(history.undo(), equals(move2));
@@ -97,10 +100,11 @@ void main() {
       const move1 = Move(row: 0, col: 0, oldValue: 0, newValue: 1);
       const move2 = Move(row: 1, col: 1, oldValue: 0, newValue: 2);
 
-      history.push(move1);
-      history.push(move2);
-      history.undo();
-      history.undo();
+      history
+        ..push(move1)
+        ..push(move2)
+        ..undo()
+        ..undo();
 
       expect(history.redo(), equals(move1));
       expect(history.redo(), equals(move2));
@@ -111,9 +115,10 @@ void main() {
       const move1 = Move(row: 0, col: 0, oldValue: 0, newValue: 1);
       const move2 = Move(row: 1, col: 1, oldValue: 0, newValue: 2);
 
-      history.push(move1);
-      history.push(move2);
-      history.undo();
+      history
+        ..push(move1)
+        ..push(move2)
+        ..undo();
 
       expect(history.canUndo, isTrue);
       expect(history.canRedo, isTrue);
@@ -132,10 +137,11 @@ void main() {
       const move3 = Move(row: 2, col: 2, oldValue: 0, newValue: 3);
       const move4 = Move(row: 3, col: 3, oldValue: 0, newValue: 4);
 
-      limitedHistory.push(move1);
-      limitedHistory.push(move2);
-      limitedHistory.push(move3);
-      limitedHistory.push(move4); // Should remove move1
+      limitedHistory
+        ..push(move1)
+        ..push(move2)
+        ..push(move3)
+        ..push(move4); // Should remove move1
 
       // Undo all moves
       expect(limitedHistory.undo(), equals(move4));
