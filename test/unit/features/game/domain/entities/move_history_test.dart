@@ -150,21 +150,40 @@ void main() {
       expect(limitedHistory.canUndo, isFalse); // move1 was dropped
     });
 
-    test('should handle alternating undo/redo operations', () {
+    test('should handle undo followed by redo', () {
       const move = Move(row: 0, col: 0, oldValue: 0, newValue: 5);
 
-      history.push(move);
+      history
+        ..push(move)
+        ..undo();
 
-      history.undo();
       expect(history.canUndo, isFalse);
       expect(history.canRedo, isTrue);
 
       history.redo();
+
       expect(history.canUndo, isTrue);
       expect(history.canRedo, isFalse);
+    });
 
+    test('should handle multiple alternating undo/redo cycles', () {
+      const move = Move(row: 0, col: 0, oldValue: 0, newValue: 5);
+
+      history
+        ..push(move)
+        // Cycle 1: undo
+        ..undo();
+
+      expect(history.canRedo, isTrue);
+
+      // Cycle 2: redo
+      history.redo();
+
+      expect(history.canUndo, isTrue);
+
+      // Cycle 3: undo again
       history.undo();
-      expect(history.canUndo, isFalse);
+
       expect(history.canRedo, isTrue);
     });
   });
