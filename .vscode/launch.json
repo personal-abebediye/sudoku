@@ -1,0 +1,77 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter: Run (Debug)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "flutterMode": "debug"
+    },
+    {
+      "name": "Flutter: Run (Profile)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "flutterMode": "profile"
+    },
+    {
+      "name": "Flutter: Run (Release)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "flutterMode": "release"
+    },
+    {
+      "name": "Flutter: iPhone 17 Pro",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "deviceId": "093652FC-CEA6-454A-9AC2-9D4AF7C50FD0"
+    },
+    {
+      "name": "Flutter: Android Emulator",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "deviceId": "emulator-5554"
+    },
+    {
+      "name": "Flutter: macOS",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "deviceId": "macos"
+    },
+    {
+      "name": "Flutter: Chrome",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "deviceId": "chrome",
+      "args": [
+        "--web-renderer",
+        "html"
+      ]
+    },
+    {
+      "name": "Flutter: All Tests",
+      "type": "dart",
+      "request": "launch",
+      "program": "test/",
+      "flutterMode": "debug"
+    },
+    {
+      "name": "Flutter: Current Test File",
+      "type": "dart",
+      "request": "launch",
+      "program": "${file}",
+      "flutterMode": "debug"
+    }
+  ],
+  "compounds": []
+}

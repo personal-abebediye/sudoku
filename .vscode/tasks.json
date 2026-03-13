@@ -1,0 +1,95 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Flutter: Get Packages",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["pub", "get"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Flutter: Clean",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["clean"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Flutter: Build Runner",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["pub", "run", "build_runner", "build", "--delete-conflicting-outputs"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Flutter: Test",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["test"],
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Flutter: Test with Coverage",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["test", "--coverage"],
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Flutter: Analyze",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["analyze"],
+      "problemMatcher": ["$dart-analyze"],
+      "group": "build"
+    },
+    {
+      "label": "Flutter: Format",
+      "type": "shell",
+      "command": "dart",
+      "args": ["format", "."],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Pre-Push Checks",
+      "type": "shell",
+      "command": ".git/hooks/pre-push",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Flutter: Build APK",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["build", "apk", "--release"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Flutter: Build iOS",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["build", "ios", "--release", "--no-codesign"],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Flutter: Build Web",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["build", "web", "--release"],
+      "problemMatcher": [],
+      "group": "build"
+    }
+  ]
+}

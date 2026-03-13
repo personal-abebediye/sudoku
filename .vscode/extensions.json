@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "dart-code.dart-code",
+    "dart-code.flutter",
+    "alexisvt.flutter-snippets",
+    "nash.awesome-flutter-snippets",
+    "usernamehw.errorlens",
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+    "gruntfuggly.todo-tree",
+    "wayou.vscode-todo-highlight"
+  ]
+}
