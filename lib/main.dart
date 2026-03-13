@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'features/game/data/services/game_persistence_service.dart';
 import 'features/game/data/services/settings_service.dart';
@@ -14,6 +15,7 @@ import 'features/game/domain/entities/user_settings.dart';
 import 'features/game/domain/services/puzzle_generator.dart';
 import 'features/game/presentation/screens/settings_screen.dart';
 import 'features/game/presentation/screens/statistics_screen.dart';
+import 'features/game/presentation/screens/tutorial_screen.dart';
 import 'features/game/presentation/widgets/number_pad_widget.dart';
 import 'features/game/presentation/widgets/sudoku_board_widget.dart';
 import 'shared/providers/theme_provider.dart';
@@ -121,6 +123,22 @@ class _GameScreenState extends ConsumerState<GameScreen>
     }
 
     _gameTimer.start();
+
+    // Show tutorial on first launch
+    final prefs = await SharedPreferences.getInstance();
+    final tutorialCompleted = prefs.getBool('tutorial_completed') ?? false;
+    if (!tutorialCompleted && mounted) {
+      // Delay to let the UI settle
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (context) => const TutorialScreen(),
+            ),
+          );
+        }
+      });
+    }
   }
 
   @override

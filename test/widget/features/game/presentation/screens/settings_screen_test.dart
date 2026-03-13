@@ -189,7 +189,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify it changed
-      var toggledSwitch = tester.widget<Switch>(switchFinder);
+      final toggledSwitch = tester.widget<Switch>(switchFinder);
       expect(toggledSwitch.value, false);
 
       // Tap reset button

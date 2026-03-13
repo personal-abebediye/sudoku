@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sudoku/features/game/data/services/settings_service.dart';
 import 'package:sudoku/features/game/domain/entities/user_settings.dart';
+import 'package:sudoku/features/game/presentation/screens/tutorial_screen.dart';
 import 'package:sudoku/shared/providers/theme_provider.dart';
 
 // ignore_for_file: prefer_const_constructors, prefer_int_literals, deprecated_member_use
@@ -91,6 +92,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildGameSettingsSection(),
           const Divider(),
           _buildDisplaySettingsSection(),
+          const Divider(),
+          _buildHelpSection(),
         ],
       ),
     );
@@ -235,5 +238,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (selected != null) {
       await _updateSettings(_settings.copyWith(themeMode: selected));
     }
+  }
+
+  Widget _buildHelpSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Help',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.school),
+          title: const Text('Show Tutorial'),
+          subtitle: const Text('Learn how to play Sudoku'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const TutorialScreen(),
+              ),
+            );
+          },
+        ),
+      ],
+    );
   }
 }
