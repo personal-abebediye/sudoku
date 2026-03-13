@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
+import 'features/game/domain/services/puzzle_generator.dart';
+import 'features/game/presentation/widgets/sudoku_board_widget.dart';
 import 'shared/providers/theme_provider.dart';
 
 void main() {
@@ -24,34 +26,58 @@ class SudokuApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: const HomePage(),
+      home: const GameScreen(),
     );
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class GameScreen extends StatefulWidget {
+  const GameScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Sudoku'),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const Text(
-                'Welcome to Sudoku!',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Ready to start development',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ],
+  State<GameScreen> createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  final _generator = PuzzleGenerator();
+  late var _board = _generator.generatePuzzle(Difficulty.easy);
+  int? _selectedRow;
+  int? _selectedCol;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Sudoku'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                _board = _generator.generatePuzzle(Difficulty.easy);
+                _selectedRow = null;
+                _selectedCol = null;
+              });
+            },
+          ),
+        ],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SudokuBoardWidget(
+            board: _board,
+            selectedRow: _selectedRow,
+            selectedCol: _selectedCol,
+            onCellSelected: (row, col) {
+              setState(() {
+                _selectedRow = row;
+                _selectedCol = col;
+              });
+            },
           ),
         ),
-      );
+      ),
+    );
+  }
 }
