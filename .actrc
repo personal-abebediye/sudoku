@@ -1,0 +1,8 @@
+# Act Configuration
+# Run GitHub Actions locally with: act
+
+# Use medium-sized image for better compatibility
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+
+# Architecture for Apple Silicon
+--container-architecture linux/amd64
