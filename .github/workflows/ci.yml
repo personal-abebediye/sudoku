@@ -57,3 +57,54 @@ jobs:
           fail_ci_if_error: false
           verbose: true
 
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    needs: test
+
+    strategy:
+      matrix:
+        include:
+          - platform: Android
+            os: ubuntu-latest
+            build-cmd: |
+              flutter build apk --release
+              flutter build appbundle --release
+            artifact-path: |
+              build/app/outputs/flutter-apk/app-release.apk
+              build/app/outputs/bundle/release/app-release.aab
+
+          - platform: iOS
+            os: macos-latest
+            build-cmd: flutter build ios --release --no-codesign
+            artifact-path: build/ios/iphoneos/Runner.app
+
+          - platform: Web
+            os: ubuntu-latest
+            build-cmd: flutter build web --release
+            artifact-path: build/web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.4'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build ${{ matrix.platform }}
+        run: ${{ matrix.build-cmd }}
+
+      - name: Upload ${{ matrix.platform }} Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-build-${{ github.sha }}
+          path: ${{ matrix.artifact-path }}
+          retention-days: 30
+

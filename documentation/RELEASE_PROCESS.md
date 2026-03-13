@@ -51,6 +51,10 @@ When ready to release to production:
    - Creates version tag (e.g., `v1.0.0`)
    - Creates GitHub Release
    - Pushes changes to main
+   - **Deploys to PROD environment:**
+     - Builds Android APK and App Bundle
+     - Uploads build artifacts
+     - Marks deployment in GitHub
 
 ### 3. Version Bumping Rules (when using `auto`)
 
@@ -78,8 +82,10 @@ The workflow analyzes commits since the last release tag:
 - **Source:** Release tags only (`v*`)
 - **Trigger:** Manual workflow dispatch (click button)
 - **Purpose:** End-user facing production
-- **CD:** Version bump, changelog, GitHub release
+- **CD:** Version bump, changelog, GitHub release, build artifacts
 - **Version:** Automatically bumped based on commits
+- **Artifacts:** Android APK and AAB uploaded to workflow artifacts
+- **Deployment:** Tracked in GitHub Environments
 
 ## Release Cadence
 
@@ -111,6 +117,8 @@ git push origin main  # DEV - CI runs
 # → Analyzes commits (feat + fix)
 # → Bumps version: 0.3.1 → 0.4.0 (feat = minor)
 # → Creates v0.4.0 tag and GitHub Release
+# → Builds Android APK/AAB
+# → Deploys to PROD environment
 ```
 
 ## Using GitHub CLI
