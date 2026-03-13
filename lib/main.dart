@@ -6,11 +6,11 @@ import 'features/game/data/services/game_persistence_service.dart';
 import 'features/game/data/services/statistics_service.dart';
 import 'features/game/domain/entities/board.dart';
 import 'features/game/domain/entities/game_state.dart';
-import 'features/game/domain/entities/game_statistics.dart';
 import 'features/game/domain/entities/game_timer.dart';
 import 'features/game/domain/entities/move.dart';
 import 'features/game/domain/entities/move_history.dart';
 import 'features/game/domain/services/puzzle_generator.dart';
+import 'features/game/presentation/screens/statistics_screen.dart';
 import 'features/game/presentation/widgets/number_pad_widget.dart';
 import 'features/game/presentation/widgets/sudoku_board_widget.dart';
 import 'shared/providers/theme_provider.dart';
@@ -188,7 +188,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
     // Load and update statistics
     final stats = await _statisticsService.loadStatistics();
     final completionTime = _gameTimer.elapsed.inSeconds;
-    final updatedStats = stats.recordCompletion(_currentDifficulty, completionTime);
+    final updatedStats =
+        stats.recordCompletion(_currentDifficulty, completionTime);
     await _statisticsService.saveStatistics(updatedStats);
 
     // Clear saved game (puzzle is complete)
@@ -203,7 +204,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
   void _showCompletionDialog(int seconds) {
     final minutes = seconds ~/ 60;
     final secs = seconds % 60;
-    final timeStr = '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    final timeStr =
+        '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
 
     showDialog<void>(
       context: context,
@@ -549,6 +551,17 @@ class _GameScreenState extends ConsumerState<GameScreen>
         actions: [
           // Timer Display
           TimerDisplay(timer: _gameTimer),
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            tooltip: 'Statistics',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const StatisticsScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.palette_outlined),
             tooltip: 'Change Theme',

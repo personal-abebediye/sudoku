@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:sudoku/features/game/domain/services/puzzle_generator.dart';
 
+// ignore_for_file: sort_constructors_first
+
 /// Statistics for a specific difficulty level
 class DifficultyStats {
   DifficultyStats({
@@ -113,7 +115,8 @@ class GameStatistics {
       GameStatistics.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
 
   /// Record a completed game
-  GameStatistics recordCompletion(Difficulty difficulty, int completionTimeSeconds) {
+  GameStatistics recordCompletion(
+      Difficulty difficulty, int completionTimeSeconds) {
     final currentStats = statsByDifficulty[difficulty]!;
     final newBestTime = currentStats.bestTimeSeconds == null
         ? completionTimeSeconds
@@ -127,7 +130,8 @@ class GameStatistics {
       bestTimeSeconds: newBestTime,
     );
 
-    final newStatsByDifficulty = Map<Difficulty, DifficultyStats>.from(statsByDifficulty);
+    final newStatsByDifficulty =
+        Map<Difficulty, DifficultyStats>.from(statsByDifficulty);
     newStatsByDifficulty[difficulty] = updatedStats;
 
     final newStreak = currentStreak + 1;
