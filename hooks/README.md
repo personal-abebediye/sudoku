@@ -9,9 +9,10 @@ This directory contains source files for Git hooks used in this project.
 Automatically runs before every `git push` to ensure code quality.
 
 **Checks performed:**
-1. ✅ Code formatting (`dart format`)
-2. ✅ Static analysis (`flutter analyze`)
-3. ✅ Unit tests (`flutter test`)
+1. ✅ YAML validation (`yamllint` on workflow files)
+2. ✅ Code formatting (`dart format`)
+3. ✅ Static analysis (`flutter analyze`)
+4. ✅ Unit tests (`flutter test`)
 
 **Installation:**
 
@@ -20,6 +21,9 @@ The hook is already installed in `.git/hooks/pre-push`. If you need to reinstall
 ```bash
 cp hooks/pre-push .git/hooks/pre-push
 chmod +x .git/hooks/pre-push
+
+# Install yamllint for YAML validation (optional but recommended)
+brew install yamllint
 ```
 
 **Bypassing the hook (not recommended):**
