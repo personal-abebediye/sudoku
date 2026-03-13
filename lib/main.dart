@@ -56,7 +56,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   Set<String> _errorCells = {};
   bool _isNotesMode = false;
   bool _isPaused = false;
-  Map<String, Set<int>> _notes = {};
+  final Map<String, Set<int>> _notes = {};
 
   @override
   void initState() {
@@ -230,28 +230,35 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Select Difficulty'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: Difficulty.values.map((difficulty) {
-              return RadioListTile<Difficulty>(
-                title: Text(_getDifficultyLabel(difficulty)),
-                subtitle: Text(_getDifficultySubtitle(difficulty)),
-                value: difficulty,
-                groupValue: _currentDifficulty,
-                onChanged: (Difficulty? value) {
-                  if (value != null) {
-                    Navigator.of(context).pop();
-                    setState(() {
-                      _currentDifficulty = value;
-                    });
-                    _handleRefresh();
-                  }
-                },
-              );
-            }).toList(),
-          ),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Select Difficulty'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: Difficulty.values.map((difficulty) {
+                  // ignore: deprecated_member_use
+                  return RadioListTile<Difficulty>(
+                    title: Text(_getDifficultyLabel(difficulty)),
+                    subtitle: Text(_getDifficultySubtitle(difficulty)),
+                    value: difficulty,
+                    // ignore: deprecated_member_use
+                    groupValue: _currentDifficulty,
+                    // ignore: deprecated_member_use
+                    onChanged: (Difficulty? value) {
+                      if (value != null) {
+                        Navigator.of(context).pop();
+                        setState(() {
+                          _currentDifficulty = value;
+                        });
+                        _handleRefresh();
+                      }
+                    },
+                  );
+                }).toList(),
+              ),
+            );
+          },
         );
       },
     );
