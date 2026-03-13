@@ -15,7 +15,25 @@ NC='\033[0m' # No Color
 # Track overall success
 CHECKS_PASSED=true
 
-# 1. Format check
+# 1. Validate YAML files
+echo "📋 Validating YAML files..."
+if command -v yamllint &> /dev/null; then
+    if ! yamllint -d '{extends: default, rules: {line-length: disable, document-start: disable, truthy: disable, brackets: disable, trailing-spaces: disable, empty-lines: disable}}' .github/workflows/*.yml > /tmp/yamllint.log 2>&1; then
+        echo -e "${RED}❌ YAML validation failed:${NC}"
+        cat /tmp/yamllint.log
+        CHECKS_PASSED=false
+    fi
+else
+    echo -e "${YELLOW}⚠️  yamllint not installed, skipping YAML validation${NC}"
+fi
+
+if [ "$CHECKS_PASSED" = false ]; then
+    echo ""
+    echo -e "${RED}❌ Pre-push checks failed${NC}"
+    exit 1
+fi
+
+# 2. Format check
 echo "📝 Checking code formatting..."
 if ! dart format --set-exit-if-changed . > /dev/null 2>&1; then
     echo -e "${YELLOW}⚠️  Code not formatted. Auto-formatting...${NC}"
@@ -30,7 +48,7 @@ if [ "$CHECKS_PASSED" = false ]; then
     exit 1
 fi
 
-# 2. Static analysis
+# 3. Static analysis
 echo "🔎 Running static analysis..."
 if ! flutter analyze --no-fatal-infos > /tmp/analyze.log 2>&1; then
     echo -e "${RED}❌ Static analysis failed:${NC}"
@@ -44,7 +62,7 @@ if [ "$CHECKS_PASSED" = false ]; then
     exit 1
 fi
 
-# 3. Run tests
+# 4. Run tests
 echo "🧪 Running tests..."
 if ! flutter test > /tmp/test.log 2>&1; then
     echo -e "${RED}❌ Tests failed:${NC}"

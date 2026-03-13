@@ -142,9 +142,7 @@ jobs:
         run: |
           cider release
           git add CHANGELOG.md pubspec.yaml
-          git commit -m "chore(release): bump version to ${{ steps.bump.outputs.new_version }}
-
-Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git commit -m "chore(release): bump version to ${{ steps.bump.outputs.new_version }}" -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
       
       - name: Create Git Tag
         if: steps.bump.outputs.bump_type != 'none'
