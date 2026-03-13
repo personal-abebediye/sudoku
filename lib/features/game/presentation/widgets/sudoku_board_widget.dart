@@ -9,6 +9,7 @@ class SudokuBoardWidget extends StatelessWidget {
     required this.board,
     this.selectedRow,
     this.selectedCol,
+    this.errorCells = const {},
     this.onCellSelected,
     super.key,
   });
@@ -16,6 +17,8 @@ class SudokuBoardWidget extends StatelessWidget {
   final Board board;
   final int? selectedRow;
   final int? selectedCol;
+  final Set<String>
+      errorCells; // Set of "row,col" strings for cells with errors
   final void Function(int row, int col)? onCellSelected;
 
   @override
@@ -42,12 +45,14 @@ class SudokuBoardWidget extends StatelessWidget {
                 final col = index % AppConstants.boardSize;
                 final cell = board.cells[row][col];
                 final isSelected = row == selectedRow && col == selectedCol;
+                final hasError = errorCells.contains('$row,$col');
 
                 return SudokuCellWidget(
                   cell: cell,
                   row: row,
                   col: col,
                   isSelected: isSelected,
+                  hasError: hasError,
                   onTap: onCellSelected != null
                       ? () => onCellSelected!(row, col)
                       : null,
@@ -68,6 +73,7 @@ class SudokuCellWidget extends StatelessWidget {
     required this.row,
     required this.col,
     this.isSelected = false,
+    this.hasError = false,
     this.onTap,
     super.key,
   });
@@ -76,6 +82,7 @@ class SudokuCellWidget extends StatelessWidget {
   final int row;
   final int col;
   final bool isSelected;
+  final bool hasError;
   final VoidCallback? onTap;
 
   @override
@@ -132,6 +139,9 @@ class SudokuCellWidget extends StatelessWidget {
   }
 
   Color _getBackgroundColor(ColorScheme colorScheme) {
+    if (hasError) {
+      return colorScheme.errorContainer;
+    }
     if (isSelected) {
       return colorScheme.primaryContainer;
     }

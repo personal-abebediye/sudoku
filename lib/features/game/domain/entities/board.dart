@@ -63,21 +63,20 @@ class Board extends Equatable {
   Iterable<Cell> _getRowCells(int row) => cells[row];
 
   /// Extracts all cells in a given column
-  Iterable<Cell> _getColumnCells(int col) =>
-      cells.map((row) => row[col]);
+  Iterable<Cell> _getColumnCells(int col) => cells.map((row) => row[col]);
 
   /// Calculates the starting coordinates of a 3x3 box containing the given position
   /// Returns a record with (row, col) representing the top-left cell of the box
   ({int row, int col}) _getBoxStart(int row, int col) => (
-    row: (row ~/ AppConstants.boxSize) * AppConstants.boxSize,
-    col: (col ~/ AppConstants.boxSize) * AppConstants.boxSize,
-  );
+        row: (row ~/ AppConstants.boxSize) * AppConstants.boxSize,
+        col: (col ~/ AppConstants.boxSize) * AppConstants.boxSize,
+      );
 
   /// Extracts all cells in a 3x3 box containing the given position
   /// Returns cells from the box that contains [row][col]
   Iterable<Cell> _getBoxCells(int row, int col) sync* {
     final boxStart = _getBoxStart(row, col);
-    
+
     for (var r = boxStart.row; r < boxStart.row + AppConstants.boxSize; r++) {
       for (var c = boxStart.col; c < boxStart.col + AppConstants.boxSize; c++) {
         yield cells[r][c];

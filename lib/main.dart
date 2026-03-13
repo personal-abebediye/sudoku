@@ -44,6 +44,19 @@ class _GameScreenState extends State<GameScreen> {
   late var _board = _generator.generatePuzzle(Difficulty.easy);
   int? _selectedRow;
   int? _selectedCol;
+  Set<String> _errorCells = {};
+
+  void _updateErrors() {
+    final errors = <String>{};
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (_board.hasConflict(row, col)) {
+          errors.add('$row,$col');
+        }
+      }
+    }
+    _errorCells = errors;
+  }
 
   void _handleNumberSelected(int number) {
     if (_selectedRow == null || _selectedCol == null) {
@@ -57,6 +70,7 @@ class _GameScreenState extends State<GameScreen> {
 
     setState(() {
       _board = _board.setCell(_selectedRow!, _selectedCol!, number);
+      _updateErrors();
     });
   }
 
@@ -73,6 +87,7 @@ class _GameScreenState extends State<GameScreen> {
                 _board = _generator.generatePuzzle(Difficulty.easy);
                 _selectedRow = null;
                 _selectedCol = null;
+                _errorCells = {};
               });
             },
           ),
@@ -94,6 +109,7 @@ class _GameScreenState extends State<GameScreen> {
                       board: _board,
                       selectedRow: _selectedRow,
                       selectedCol: _selectedCol,
+                      errorCells: _errorCells,
                       onCellSelected: (row, col) {
                         setState(() {
                           _selectedRow = row;
