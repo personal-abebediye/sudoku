@@ -10,6 +10,7 @@ import 'features/game/domain/entities/game_timer.dart';
 import 'features/game/domain/entities/move.dart';
 import 'features/game/domain/entities/move_history.dart';
 import 'features/game/domain/services/puzzle_generator.dart';
+import 'features/game/presentation/screens/settings_screen.dart';
 import 'features/game/presentation/screens/statistics_screen.dart';
 import 'features/game/presentation/widgets/number_pad_widget.dart';
 import 'features/game/presentation/widgets/sudoku_board_widget.dart';
@@ -385,88 +386,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _saveGameState(); // Save restarted game
   }
 
-  void _showThemeDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        final currentTheme = ref.read(themeModeProvider);
-
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Choose Theme'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // ignore: deprecated_member_use
-                  RadioListTile<AppThemeMode>(
-                    title: const Text('Light'),
-                    subtitle: const Text('Bright and clean'),
-                    value: AppThemeMode.light,
-                    // ignore: deprecated_member_use
-                    groupValue: currentTheme,
-                    // ignore: deprecated_member_use
-                    onChanged: (AppThemeMode? value) {
-                      if (value != null) {
-                        ref.read(themeModeProvider.notifier).state = value;
-                        Navigator.of(context).pop();
-                      }
-                    },
-                  ),
-                  // ignore: deprecated_member_use
-                  RadioListTile<AppThemeMode>(
-                    title: const Text('Dark'),
-                    subtitle: const Text('Easy on the eyes'),
-                    value: AppThemeMode.dark,
-                    // ignore: deprecated_member_use
-                    groupValue: currentTheme,
-                    // ignore: deprecated_member_use
-                    onChanged: (AppThemeMode? value) {
-                      if (value != null) {
-                        ref.read(themeModeProvider.notifier).state = value;
-                        Navigator.of(context).pop();
-                      }
-                    },
-                  ),
-                  // ignore: deprecated_member_use
-                  RadioListTile<AppThemeMode>(
-                    title: const Text('High Contrast'),
-                    subtitle: const Text('Maximum readability'),
-                    value: AppThemeMode.highContrast,
-                    // ignore: deprecated_member_use
-                    groupValue: currentTheme,
-                    // ignore: deprecated_member_use
-                    onChanged: (AppThemeMode? value) {
-                      if (value != null) {
-                        ref.read(themeModeProvider.notifier).state = value;
-                        Navigator.of(context).pop();
-                      }
-                    },
-                  ),
-                  // ignore: deprecated_member_use
-                  RadioListTile<AppThemeMode>(
-                    title: const Text('System'),
-                    subtitle: const Text('Match device settings'),
-                    value: AppThemeMode.system,
-                    // ignore: deprecated_member_use
-                    groupValue: currentTheme,
-                    // ignore: deprecated_member_use
-                    onChanged: (AppThemeMode? value) {
-                      if (value != null) {
-                        ref.read(themeModeProvider.notifier).state = value;
-                        Navigator.of(context).pop();
-                      }
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   void _showDifficultyDialog() {
     showDialog<void>(
       context: context,
@@ -563,9 +482,15 @@ class _GameScreenState extends ConsumerState<GameScreen>
             },
           ),
           IconButton(
-            icon: const Icon(Icons.palette_outlined),
-            tooltip: 'Change Theme',
-            onPressed: _showThemeDialog,
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: Icon(_isNotesMode ? Icons.edit : Icons.edit_outlined),
