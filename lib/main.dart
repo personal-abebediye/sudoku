@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
+import 'features/game/domain/entities/game_timer.dart';
 import 'features/game/domain/entities/move.dart';
 import 'features/game/domain/entities/move_history.dart';
 import 'features/game/domain/services/puzzle_generator.dart';
@@ -41,13 +43,40 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   final _generator = PuzzleGenerator();
   final _moveHistory = MoveHistory();
+  final _gameTimer = GameTimer();
   late var _board = _generator.generatePuzzle(Difficulty.easy);
   int? _selectedRow;
   int? _selectedCol;
   Set<String> _errorCells = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _gameTimer.start(); // Start timer when game loads
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Pause timer when app goes to background
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _gameTimer.pause();
+    }
+    // Resume timer when app comes back to foreground
+    else if (state == AppLifecycleState.resumed) {
+      _gameTimer.resume();
+    }
+  }
 
   void _updateErrors() {
     final errors = <String>{};
@@ -123,6 +152,9 @@ class _GameScreenState extends State<GameScreen> {
       _selectedCol = null;
       _errorCells = {};
       _moveHistory.clear(); // Clear history when starting new puzzle
+      _gameTimer
+        ..reset() // Reset timer when starting new puzzle
+        ..start(); // Start fresh timer
     });
   }
 
@@ -132,6 +164,8 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: const Text('Sudoku'),
         actions: [
+          // Timer Display
+          TimerDisplay(timer: _gameTimer),
           IconButton(
             icon: const Icon(Icons.undo),
             tooltip: 'Undo',
@@ -188,6 +222,63 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget that displays the game timer with real-time updates
+class TimerDisplay extends StatefulWidget {
+  const TimerDisplay({required this.timer, super.key});
+
+  final GameTimer timer;
+
+  @override
+  State<TimerDisplay> createState() => _TimerDisplayState();
+}
+
+class _TimerDisplayState extends State<TimerDisplay>
+    with SingleTickerProviderStateMixin {
+  late Ticker _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    // Create a ticker that updates every second
+    _ticker = createTicker((_) {
+      if (widget.timer.isRunning) {
+        setState(() {}); // Trigger rebuild to update time display
+      }
+    });
+    _ticker.start();
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.timer_outlined, size: 20),
+            const SizedBox(width: 4),
+            Text(
+              widget.timer.format(),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontFeatures: const [
+                  FontFeature.tabularFigures(),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
