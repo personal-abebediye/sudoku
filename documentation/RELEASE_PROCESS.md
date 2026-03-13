@@ -20,27 +20,34 @@ git commit -m "feat: add new feature"
 git push origin main  # Pre-push hook runs automatically
 ```
 
-- Pre-push hook validates code quality
-- CI workflow runs on GitHub
+- Pre-push hook validates code quality (format, analyze, test, YAML)
+- CI workflow runs on GitHub (tests and analysis only)
 - Changes are live in DEV environment
-- **No version bump yet**
+- **No version bump or release yet**
 
 ### 2. Create Release (PROD)
 
 When ready to release to production:
 
-1. **Go to GitHub Actions**
-   - Visit: https://github.com/personal-abebediye/sudoku/actions/workflows/version-bump.yml
-   
-2. **Click "Run workflow"**
+1. **Ensure CI is passing**
+   - Check: https://github.com/personal-abebediye/sudoku/actions
+   - Wait for latest CI run to complete successfully ✅
+
+2. **Manually trigger release workflow**
+   - Go to: https://github.com/personal-abebediye/sudoku/actions/workflows/release.yml
+   - Click "Run workflow" button
    - Select branch: `main`
-   - Choose bump type: `auto` (recommended) or `major`/`minor`/`patch`
-   - Click "Run workflow"
+   - Choose bump type:
+     - `auto` (recommended) - Analyzes commits automatically
+     - `major` - Force major version bump (breaking changes)
+     - `minor` - Force minor version bump (new features)
+     - `patch` - Force patch version bump (bug fixes)
+   - Click "Run workflow" ▶️
 
 3. **The workflow automatically:**
    - Analyzes commits since last release (if `auto` selected)
-   - Bumps version in `pubspec.yaml` based on conventional commits
-   - Updates `CHANGELOG.md` 
+   - Bumps version in `pubspec.yaml`
+   - Updates `CHANGELOG.md`
    - Creates version tag (e.g., `v1.0.0`)
    - Creates GitHub Release
    - Pushes changes to main
@@ -56,7 +63,7 @@ The workflow analyzes commits since the last release tag:
 | `fix:` or `perf:` | **Patch** | 1.0.0 → 1.0.1 |
 | `docs:`, `chore:`, `test:`, `style:` | None | No bump |
 
-**Manual override:** Choose `major`, `minor`, or `patch` to force a specific bump type.
+**Manual override:** Choose `major`, `minor`, or `patch` to force a specific bump type regardless of commits.
 
 ## Environments
 
@@ -67,9 +74,9 @@ The workflow analyzes commits since the last release tag:
 - **CI:** Runs tests, formatting, analysis
 - **Version:** Uses current pubspec.yaml version (may be behind latest release)
 
-### PROD Environment  
+### PROD Environment
 - **Source:** Release tags only (`v*`)
-- **Trigger:** Manual workflow dispatch
+- **Trigger:** Manual workflow dispatch (click button)
 - **Purpose:** End-user facing production
 - **CD:** Version bump, changelog, GitHub release
 - **Version:** Automatically bumped based on commits
@@ -91,32 +98,19 @@ The workflow analyzes commits since the last release tag:
 ```bash
 # Week 1: Implement features
 git commit -m "feat: add puzzle generator"
-git push origin main  # DEV deployment
+git push origin main  # DEV - CI runs
 
 git commit -m "test: add generator tests"
-git push origin main  # DEV deployment
+git push origin main  # DEV - CI runs
 
 git commit -m "fix: generator edge case"
-git push origin main  # DEV deployment
+git push origin main  # DEV - CI runs
 
-# Ready to release? Go to GitHub Actions and run "Version Bump and Release" workflow
-# → Workflow analyzes commits (feat + fix)
+# All tests passing? Ready to release!
+# Go to GitHub Actions → Create Release workflow → Run workflow (auto)
+# → Analyzes commits (feat + fix)
 # → Bumps version: 0.3.1 → 0.4.0 (feat = minor)
 # → Creates v0.4.0 tag and GitHub Release
-```
-
-## Emergency Rollback
-
-If a release has critical issues:
-
-```bash
-# Revert to previous release
-git checkout v1.0.0
-
-# Or create hotfix and release via workflow
-git commit -m "fix!: critical security issue"
-git push origin main
-# Then manually run release workflow with bump_type: patch
 ```
 
 ## Using GitHub CLI
@@ -124,11 +118,17 @@ git push origin main
 You can also trigger the release workflow from command line:
 
 ```bash
+# Check if CI is passing first
+gh run list --workflow=ci.yml --limit 1
+
 # Trigger release with auto version bump
-gh workflow run version-bump.yml
+gh workflow run release.yml
 
 # Or with specific bump type
-gh workflow run version-bump.yml -f bump_type=minor
+gh workflow run release.yml -f bump_type=minor
+
+# Watch the release workflow
+gh run watch
 ```
 
 ## Checking Release Status
@@ -143,19 +143,20 @@ gh release view v1.0.0
 ```
 
 View workflow runs:
-- https://github.com/personal-abebediye/sudoku/actions
+- CI: https://github.com/personal-abebediye/sudoku/actions/workflows/ci.yml
+- Release: https://github.com/personal-abebediye/sudoku/actions/workflows/release.yml
 
 ## Migration from Old Setup
 
 **Previous behavior:**
-- Every push to main triggered version bump
-- Many unnecessary version bumps for chore commits
+- Every push to main triggered version bump automatically
+- Many unnecessary version bumps for chore/docs commits
 
 **New behavior:**
-- Push to main → DEV deployment only (no version bump)
-- Manual workflow trigger → PROD deployment with version bump
+- Push to main → CI runs (tests only, no release)
+- Manual click → Release workflow runs (version bump + release)
 - Cleaner version history
-- More control over releases
+- Full control over when releases happen
 
 ## Quick Reference
 
@@ -163,13 +164,10 @@ View workflow runs:
 # Daily development (DEV)
 git commit -m "feat: ..." && git push origin main
 
-# Create release (PROD) - via GitHub Web UI
-# 1. Go to: https://github.com/personal-abebediye/sudoku/actions/workflows/version-bump.yml
-# 2. Click "Run workflow"
-# 3. Select bump type (usually "auto")
-# 4. Click "Run workflow"
-
-# Or via CLI
-gh workflow run version-bump.yml
+# Create release (PROD)
+# 1. Ensure CI passed: https://github.com/personal-abebediye/sudoku/actions/workflows/ci.yml
+# 2. Trigger release: https://github.com/personal-abebediye/sudoku/actions/workflows/release.yml
+# 3. Click "Run workflow" button
 ```
+
 

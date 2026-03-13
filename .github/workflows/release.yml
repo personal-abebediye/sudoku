@@ -1,0 +1,118 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type (auto analyzes commits since last tag)'
+        required: true
+        type: choice
+        default: 'auto'
+        options:
+          - auto
+          - major
+          - minor
+          - patch
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.4'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Activate Cider
+        run: dart pub global activate cider
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Analyze commits and bump version
+        id: bump
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --format="%s" HEAD)
+          else
+            COMMITS=$(git log --format="%s" ${LAST_TAG}..HEAD)
+          fi
+
+          BUMP_TYPE="${{ github.event.inputs.bump_type }}"
+
+          if [ "$BUMP_TYPE" = "auto" ]; then
+            if echo "$COMMITS" | grep -qE "^[a-z]+(\(.+\))?!:|BREAKING CHANGE:"; then
+              echo "Detected BREAKING CHANGE - bumping major version"
+              BUMP_TYPE="major"
+            elif echo "$COMMITS" | grep -qE "^feat(\(.+\))?:"; then
+              echo "Detected new feature - bumping minor version"
+              BUMP_TYPE="minor"
+            elif echo "$COMMITS" | grep -qE "^fix(\(.+\))?:|^perf(\(.+\))?:"; then
+              echo "Detected fix/perf - bumping patch version"
+              BUMP_TYPE="patch"
+            else
+              echo "No significant changes detected - skipping version bump"
+              echo "bump_type=none" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+          echo "Bumping $BUMP_TYPE version"
+          cider bump $BUMP_TYPE
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+
+          NEW_VERSION=$(cider version)
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update CHANGELOG
+        if: steps.bump.outputs.bump_type != 'none'
+        run: |
+          cider release
+          git add CHANGELOG.md pubspec.yaml
+          git commit -m "chore(release): bump version to ${{ steps.bump.outputs.new_version }}" -m "Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+
+      - name: Create Git Tag
+        if: steps.bump.outputs.bump_type != 'none'
+        run: |
+          git tag -a "v${{ steps.bump.outputs.new_version }}" -m "Release v${{ steps.bump.outputs.new_version }}"
+
+      - name: Push changes
+        if: steps.bump.outputs.bump_type != 'none'
+        run: |
+          git push origin main
+          git push origin "v${{ steps.bump.outputs.new_version }}"
+
+      - name: Create GitHub Release
+        if: steps.bump.outputs.bump_type != 'none'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.bump.outputs.new_version }}
+          release_name: Release v${{ steps.bump.outputs.new_version }}
+          body: |
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
