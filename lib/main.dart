@@ -3,12 +3,14 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'features/game/data/services/game_persistence_service.dart';
+import 'features/game/data/services/settings_service.dart';
 import 'features/game/data/services/statistics_service.dart';
 import 'features/game/domain/entities/board.dart';
 import 'features/game/domain/entities/game_state.dart';
 import 'features/game/domain/entities/game_timer.dart';
 import 'features/game/domain/entities/move.dart';
 import 'features/game/domain/entities/move_history.dart';
+import 'features/game/domain/entities/user_settings.dart';
 import 'features/game/domain/services/puzzle_generator.dart';
 import 'features/game/presentation/screens/settings_screen.dart';
 import 'features/game/presentation/screens/statistics_screen.dart';
@@ -61,6 +63,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   final _gameTimer = GameTimer();
   final _persistenceService = GamePersistenceService();
   final _statisticsService = StatisticsService();
+  final _settingsService = SettingsService();
   Difficulty _currentDifficulty = Difficulty.easy;
   Board? _board;
   Board? _originalBoard; // Store original for restart
@@ -71,6 +74,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   bool _isPaused = false;
   bool _isLoading = true;
   final Map<String, Set<int>> _notes = {};
+  UserSettings _settings = const UserSettings();
 
   @override
   void initState() {
@@ -80,11 +84,21 @@ class _GameScreenState extends ConsumerState<GameScreen>
   }
 
   Future<void> _loadOrCreateGame() async {
+    // Initialize services
+    await _settingsService.initialize();
+
+    // Load settings and apply theme
+    final settings = await _settingsService.loadSettings();
+    if (mounted) {
+      ref.read(themeModeProvider.notifier).state = settings.themeMode;
+    }
+
     final savedGame = await _persistenceService.loadGame();
 
     if (savedGame != null) {
       // Resume saved game
       setState(() {
+        _settings = settings;
         _board = savedGame.board;
         _originalBoard = savedGame.originalBoard;
         _currentDifficulty = savedGame.difficulty;
@@ -99,6 +113,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
     } else {
       // Create new game
       setState(() {
+        _settings = settings;
         _board = _generator.generatePuzzle(_currentDifficulty);
         _originalBoard = _board;
         _isLoading = false;
@@ -148,15 +163,20 @@ class _GameScreenState extends ConsumerState<GameScreen>
       return;
     }
 
-    final errors = <String>{};
-    for (var row = 0; row < 9; row++) {
-      for (var col = 0; col < 9; col++) {
-        if (_board!.hasConflict(row, col)) {
-          errors.add('$row,$col');
+    // Only check errors if auto-check is enabled
+    if (_settings.autoCheckErrors) {
+      final errors = <String>{};
+      for (var row = 0; row < 9; row++) {
+        for (var col = 0; col < 9; col++) {
+          if (_board!.hasConflict(row, col)) {
+            errors.add('$row,$col');
+          }
         }
       }
+      _errorCells = errors;
+    } else {
+      _errorCells = {};
     }
-    _errorCells = errors;
 
     // Check if puzzle is complete
     if (_isPuzzleComplete()) {
@@ -468,8 +488,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
       appBar: AppBar(
         title: const Text('Sudoku'),
         actions: [
-          // Timer Display
-          TimerDisplay(timer: _gameTimer),
+          // Timer Display (if enabled)
+          if (_settings.showTimer) TimerDisplay(timer: _gameTimer),
           IconButton(
             icon: const Icon(Icons.bar_chart),
             tooltip: 'Statistics',
@@ -484,12 +504,22 @@ class _GameScreenState extends ConsumerState<GameScreen>
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',
-            onPressed: () {
-              Navigator.of(context).push(
+            onPressed: () async {
+              await Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (context) => const SettingsScreen(),
                 ),
               );
+              // Reload settings after returning
+              final newSettings = await _settingsService.loadSettings();
+              if (mounted) {
+                setState(() {
+                  _settings = newSettings;
+                });
+                // Sync theme with provider
+                ref.read(themeModeProvider.notifier).state =
+                    newSettings.themeMode;
+              }
             },
           ),
           IconButton(
