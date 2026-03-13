@@ -18,7 +18,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: '3.41.4'
           channel: 'stable'
           cache: true
       
@@ -26,7 +26,7 @@ jobs:
         run: flutter pub get
       
       - name: Verify formatting
-        run: flutter format --set-exit-if-changed .
+        run: dart format --set-exit-if-changed .
       
       - name: Analyze code
         run: flutter analyze
@@ -36,6 +36,11 @@ jobs:
       
       - name: Check test coverage
         run: |
+          # Install lcov if not available
+          if ! command -v lcov &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y lcov
+          fi
+          
           # Calculate coverage percentage
           COVERAGE=$(lcov --summary coverage/lcov.info 2>&1 | grep "lines" | awk '{print $2}' | cut -d'%' -f1)
           echo "Test coverage: $COVERAGE%"
