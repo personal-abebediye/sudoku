@@ -50,11 +50,24 @@ class SudokuBoardWidget extends StatelessWidget {
                 final hasError = errorCells.contains('$row,$col');
                 final cellNotes = notes['$row,$col'] ?? {};
 
+                // Check if cell is in same row, column, or box as selected cell
+                // (but not the selected cell itself)
+                final isHighlighted = !isSelected &&
+                    selectedRow != null &&
+                    selectedCol != null &&
+                    (row == selectedRow ||
+                        col == selectedCol ||
+                        (row ~/ AppConstants.boxSize ==
+                                selectedRow! ~/ AppConstants.boxSize &&
+                            col ~/ AppConstants.boxSize ==
+                                selectedCol! ~/ AppConstants.boxSize));
+
                 return SudokuCellWidget(
                   cell: cell,
                   row: row,
                   col: col,
                   isSelected: isSelected,
+                  isHighlighted: isHighlighted,
                   hasError: hasError,
                   notes: cellNotes,
                   onTap: onCellSelected != null
@@ -77,6 +90,7 @@ class SudokuCellWidget extends StatelessWidget {
     required this.row,
     required this.col,
     this.isSelected = false,
+    this.isHighlighted = false,
     this.hasError = false,
     this.notes = const {},
     this.onTap,
@@ -87,6 +101,7 @@ class SudokuCellWidget extends StatelessWidget {
   final int row;
   final int col;
   final bool isSelected;
+  final bool isHighlighted;
   final bool hasError;
   final Set<int> notes;
   final VoidCallback? onTap;
@@ -102,27 +117,48 @@ class SudokuCellWidget extends StatelessWidget {
     final isBottomBorder = row == AppConstants.boardSize - 1;
     final isRightBorder = col == AppConstants.boardSize - 1;
 
+    //  Determine 3x3 box for alternating purple background
+    final boxRow = row ~/ AppConstants.boxSize;
+    final boxCol = col ~/ AppConstants.boxSize;
+    final boxIndex = boxRow * 3 + boxCol;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: _getBackgroundColor(colorScheme),
+          color: _getBackgroundColor(colorScheme, boxIndex),
           border: Border(
             top: BorderSide(
-              color: colorScheme.outline,
-              width: isTopBorder ? 2.0 : 0.5,
+              color: isSelected ? colorScheme.primary : colorScheme.outline,
+              width: isSelected && isTopBorder
+                  ? 3.0
+                  : isTopBorder
+                      ? 2.0
+                      : 0.5,
             ),
             left: BorderSide(
-              color: colorScheme.outline,
-              width: isLeftBorder ? 2.0 : 0.5,
+              color: isSelected ? colorScheme.primary : colorScheme.outline,
+              width: isSelected && isLeftBorder
+                  ? 3.0
+                  : isLeftBorder
+                      ? 2.0
+                      : 0.5,
             ),
             bottom: BorderSide(
-              color: colorScheme.outline,
-              width: isBottomBorder ? 2.0 : 0.5,
+              color: isSelected ? colorScheme.primary : colorScheme.outline,
+              width: isSelected
+                  ? 3.0
+                  : isBottomBorder
+                      ? 2.0
+                      : 0.5,
             ),
             right: BorderSide(
-              color: colorScheme.outline,
-              width: isRightBorder ? 2.0 : 0.5,
+              color: isSelected ? colorScheme.primary : colorScheme.outline,
+              width: isSelected
+                  ? 3.0
+                  : isRightBorder
+                      ? 2.0
+                      : 0.5,
             ),
           ),
         ),
@@ -174,13 +210,21 @@ class SudokuCellWidget extends StatelessWidget {
     );
   }
 
-  Color _getBackgroundColor(ColorScheme colorScheme) {
+  Color _getBackgroundColor(ColorScheme colorScheme, int boxIndex) {
     if (hasError) {
       return colorScheme.errorContainer;
     }
+
+    // If this is the selected cell, use stronger highlight
     if (isSelected) {
-      return colorScheme.primaryContainer;
+      return const Color(0x40933AEA); // Slightly stronger purple for selected
     }
+
+    // If this cell is in the same row, column, or box as selected cell
+    if (isHighlighted) {
+      return const Color(0x26933AEA); // Subtle prominent purple (15% opacity)
+    }
+
     return colorScheme.surface;
   }
 }

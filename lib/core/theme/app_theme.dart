@@ -12,7 +12,8 @@ class AppTheme {
   static const Color backgroundLight = Color(0xFFF6F7F8);
   static const Color backgroundDark = Color(0xFF0A0A0A); // Deep black
   static const Color charcoal = Color(0xFF1C1C1E);
-  static const Color influence = Color(0x26933AEA); // Subtle prominent purple (15% opacity)
+  static const Color influence =
+      Color(0x26933AEA); // Subtle prominent purple (15% opacity)
   static const Color pureWhite = Color(0xFFFFFFFF);
   static const Color mutedGray = Color(0xFF3A3A5C);
 
