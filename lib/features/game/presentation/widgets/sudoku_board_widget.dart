@@ -25,61 +25,103 @@ class SudokuBoardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calculate size based on available space
         final size = constraints.maxWidth < constraints.maxHeight
             ? constraints.maxWidth
             : constraints.maxHeight;
+        final cellSize = size / AppConstants.boardSize;
 
         return Center(
           child: SizedBox(
             width: size,
             height: size,
-            child: GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: AppConstants.boardSize,
-              ),
-              itemCount: AppConstants.boardSize * AppConstants.boardSize,
-              itemBuilder: (context, index) {
-                final row = index ~/ AppConstants.boardSize;
-                final col = index % AppConstants.boardSize;
-                final cell = board.cells[row][col];
-                final isSelected = row == selectedRow && col == selectedCol;
-                final hasError = errorCells.contains('$row,$col');
-                final cellNotes = notes['$row,$col'] ?? {};
+            child: Stack(
+              children: [
+                // Purple 3x3 box backgrounds
+                ..._buildBoxBackgrounds(cellSize, theme),
+                // Cell grid on top
+                GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: AppConstants.boardSize,
+                  ),
+                  itemCount: AppConstants.boardSize * AppConstants.boardSize,
+                  itemBuilder: (context, index) {
+                    final row = index ~/ AppConstants.boardSize;
+                    final col = index % AppConstants.boardSize;
+                    final cell = board.cells[row][col];
+                    final isSelected = row == selectedRow && col == selectedCol;
+                    final hasError = errorCells.contains('$row,$col');
+                    final cellNotes = notes['$row,$col'] ?? {};
 
-                // Check if cell is in same row, column, or box as selected cell
-                // (but not the selected cell itself)
-                final isHighlighted = !isSelected &&
-                    selectedRow != null &&
-                    selectedCol != null &&
-                    (row == selectedRow ||
-                        col == selectedCol ||
-                        (row ~/ AppConstants.boxSize ==
-                                selectedRow! ~/ AppConstants.boxSize &&
-                            col ~/ AppConstants.boxSize ==
-                                selectedCol! ~/ AppConstants.boxSize));
+                    // Check if cell is in same row, column, or box as selected cell
+                    // (but not the selected cell itself)
+                    final isHighlighted = !isSelected &&
+                        selectedRow != null &&
+                        selectedCol != null &&
+                        (row == selectedRow ||
+                            col == selectedCol ||
+                            (row ~/ AppConstants.boxSize ==
+                                    selectedRow! ~/ AppConstants.boxSize &&
+                                col ~/ AppConstants.boxSize ==
+                                    selectedCol! ~/ AppConstants.boxSize));
 
-                return SudokuCellWidget(
-                  cell: cell,
-                  row: row,
-                  col: col,
-                  isSelected: isSelected,
-                  isHighlighted: isHighlighted,
-                  hasError: hasError,
-                  notes: cellNotes,
-                  onTap: onCellSelected != null
-                      ? () => onCellSelected!(row, col)
-                      : null,
-                );
-              },
+                    return SudokuCellWidget(
+                      cell: cell,
+                      row: row,
+                      col: col,
+                      isSelected: isSelected,
+                      isHighlighted: isHighlighted,
+                      hasError: hasError,
+                      notes: cellNotes,
+                      onTap: onCellSelected != null
+                          ? () => onCellSelected!(row, col)
+                          : null,
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         );
       },
     );
+  }
+
+  /// Build purple background containers for each 3x3 box
+  List<Widget> _buildBoxBackgrounds(double cellSize, ThemeData theme) {
+    final boxBackgrounds = <Widget>[];
+    const boxSize = AppConstants.boxSize; // 3
+    final boxDimension = cellSize * boxSize;
+    
+    // Purple color from design
+    const purpleBoxColor = Color(0xFF2d1b69);
+
+    for (var boxRow = 0; boxRow < 3; boxRow++) {
+      for (var boxCol = 0; boxCol < 3; boxCol++) {
+        boxBackgrounds.add(
+          Positioned(
+            left: boxCol * boxDimension,
+            top: boxRow * boxDimension,
+            width: boxDimension,
+            height: boxDimension,
+            child: Container(
+              margin: const EdgeInsets.all(2), // Small gap between boxes
+              decoration: BoxDecoration(
+                color: purpleBoxColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    return boxBackgrounds;
   }
 }
 
@@ -111,54 +153,61 @@ class SudokuCellWidget extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Determine border thickness for 3x3 box boundaries
-    final isTopBorder = row % AppConstants.boxSize == 0;
-    final isLeftBorder = col % AppConstants.boxSize == 0;
-    final isBottomBorder = row == AppConstants.boardSize - 1;
-    final isRightBorder = col == AppConstants.boardSize - 1;
-
-    //  Determine 3x3 box for alternating purple background
-    final boxRow = row ~/ AppConstants.boxSize;
-    final boxCol = col ~/ AppConstants.boxSize;
-    final boxIndex = boxRow * 3 + boxCol;
+    // Determine if this cell is on a 3x3 box boundary
+    final isTopBoxBorder = row % AppConstants.boxSize == 0;
+    final isLeftBoxBorder = col % AppConstants.boxSize == 0;
+    final isBottomBoxBorder = (row + 1) % AppConstants.boxSize == 0 || row == AppConstants.boardSize - 1;
+    final isRightBoxBorder = (col + 1) % AppConstants.boxSize == 0 || col == AppConstants.boardSize - 1;
+    
+    // Box border color (darker for better visibility)
+    const boxBorderColor = Color(0xFF5a5a7c);
+    const cellBorderColor = Color(0xFF3a3a5c);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: _getBackgroundColor(colorScheme, boxIndex),
+          color: _getBackgroundColor(colorScheme, 0),
           border: Border(
             top: BorderSide(
-              color: isSelected ? colorScheme.primary : colorScheme.outline,
-              width: isSelected && isTopBorder
+              color: isSelected 
+                  ? colorScheme.primary 
+                  : (isTopBoxBorder ? boxBorderColor : cellBorderColor),
+              width: isSelected && isTopBoxBorder
                   ? 3.0
-                  : isTopBorder
-                      ? 2.0
-                      : 0.5,
+                  : isTopBoxBorder
+                      ? 3.0
+                      : 1.0,
             ),
             left: BorderSide(
-              color: isSelected ? colorScheme.primary : colorScheme.outline,
-              width: isSelected && isLeftBorder
+              color: isSelected 
+                  ? colorScheme.primary 
+                  : (isLeftBoxBorder ? boxBorderColor : cellBorderColor),
+              width: isSelected && isLeftBoxBorder
                   ? 3.0
-                  : isLeftBorder
-                      ? 2.0
-                      : 0.5,
+                  : isLeftBoxBorder
+                      ? 3.0
+                      : 1.0,
             ),
             bottom: BorderSide(
-              color: isSelected ? colorScheme.primary : colorScheme.outline,
+              color: isSelected 
+                  ? colorScheme.primary 
+                  : (isBottomBoxBorder ? boxBorderColor : cellBorderColor),
               width: isSelected
                   ? 3.0
-                  : isBottomBorder
-                      ? 2.0
-                      : 0.5,
+                  : isBottomBoxBorder
+                      ? 3.0
+                      : 1.0,
             ),
             right: BorderSide(
-              color: isSelected ? colorScheme.primary : colorScheme.outline,
+              color: isSelected 
+                  ? colorScheme.primary 
+                  : (isRightBoxBorder ? boxBorderColor : cellBorderColor),
               width: isSelected
                   ? 3.0
-                  : isRightBorder
-                      ? 2.0
-                      : 0.5,
+                  : isRightBoxBorder
+                      ? 3.0
+                      : 1.0,
             ),
           ),
         ),
@@ -169,8 +218,8 @@ class SudokuCellWidget extends StatelessWidget {
                   '${cell.value}',
                   style: theme.textTheme.headlineSmall?.copyWith(
                     color: cell.isFixed
-                        ? colorScheme.primary
-                        : colorScheme.onSurface,
+                        ? colorScheme.onSurface // White for fixed
+                        : const Color(0xFF4dd4e8), // Cyan for user input
                     fontWeight:
                         cell.isFixed ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -225,6 +274,7 @@ class SudokuCellWidget extends StatelessWidget {
       return const Color(0x26933AEA); // Subtle prominent purple (15% opacity)
     }
 
-    return colorScheme.surface;
+    // Transparent to show purple box background through
+    return Colors.transparent;
   }
 }
