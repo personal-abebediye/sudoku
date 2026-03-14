@@ -51,7 +51,7 @@ void main() {
     });
 
     group('generatePuzzle', () {
-      test('should generate easy puzzle with 40-45 clues', () {
+      test('should generate easy puzzle with 45-50 clues', () {
         // Act
         final board = generator.generatePuzzle(Difficulty.easy);
 
@@ -65,11 +65,11 @@ void main() {
             }
           }
         }
-        expect(clueCount, greaterThanOrEqualTo(40));
-        expect(clueCount, lessThanOrEqualTo(45));
+        expect(clueCount, greaterThanOrEqualTo(45));
+        expect(clueCount, lessThanOrEqualTo(50));
       });
 
-      test('should generate medium puzzle with 45-50 clues', () {
+      test('should generate medium puzzle with 35-40 clues', () {
         // Act
         final board = generator.generatePuzzle(Difficulty.medium);
 
@@ -82,11 +82,11 @@ void main() {
             }
           }
         }
-        expect(clueCount, greaterThanOrEqualTo(45));
-        expect(clueCount, lessThanOrEqualTo(50));
+        expect(clueCount, greaterThanOrEqualTo(35));
+        expect(clueCount, lessThanOrEqualTo(40));
       });
 
-      test('should generate hard puzzle with 50-55 clues', () {
+      test('should generate hard puzzle with 27-32 clues', () {
         // Act
         final board = generator.generatePuzzle(Difficulty.hard);
 
@@ -99,11 +99,11 @@ void main() {
             }
           }
         }
-        expect(clueCount, greaterThanOrEqualTo(50));
-        expect(clueCount, lessThanOrEqualTo(55));
+        expect(clueCount, greaterThanOrEqualTo(27));
+        expect(clueCount, lessThanOrEqualTo(32));
       });
 
-      test('should generate expert puzzle with 55+ clues', () {
+      test('should generate expert puzzle with 22-26 clues', () {
         // Act
         final board = generator.generatePuzzle(Difficulty.expert);
 
@@ -116,7 +116,8 @@ void main() {
             }
           }
         }
-        expect(clueCount, greaterThanOrEqualTo(55));
+        expect(clueCount, greaterThanOrEqualTo(22));
+        expect(clueCount, lessThanOrEqualTo(26));
       });
 
       test('should generate valid puzzle with no rule violations', () {

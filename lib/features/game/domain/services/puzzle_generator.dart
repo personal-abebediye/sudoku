@@ -3,11 +3,14 @@ import 'package:sudoku/core/constants/app_constants.dart';
 import 'package:sudoku/features/game/domain/entities/board.dart';
 
 /// Difficulty levels for puzzle generation
+/// Based on clue count - fewer clues generally means harder puzzles
+/// Note: True difficulty also depends on solving techniques required,
+/// but clue count provides a reasonable approximation for casual play
 enum Difficulty {
-  easy, // 40-45 clues
-  medium, // 45-50 clues
-  hard, // 50-55 clues
-  expert, // 55+ clues
+  easy, // 45-50 clues (very generous hints)
+  medium, // 35-40 clues (moderate challenge)
+  hard, // 27-32 clues (requires advanced techniques)
+  expert, // 22-26 clues (very challenging, near minimum)
 }
 
 /// Extension for difficulty clue ranges
@@ -15,26 +18,26 @@ extension DifficultyExtension on Difficulty {
   int get minClues {
     switch (this) {
       case Difficulty.easy:
-        return 40;
-      case Difficulty.medium:
         return 45;
+      case Difficulty.medium:
+        return 35;
       case Difficulty.hard:
-        return 50;
+        return 27;
       case Difficulty.expert:
-        return 55;
+        return 22; // Near the mathematical minimum of 17
     }
   }
 
   int get maxClues {
     switch (this) {
       case Difficulty.easy:
-        return 45;
-      case Difficulty.medium:
         return 50;
+      case Difficulty.medium:
+        return 40;
       case Difficulty.hard:
-        return 55;
+        return 32;
       case Difficulty.expert:
-        return 60;
+        return 26;
     }
   }
 }
