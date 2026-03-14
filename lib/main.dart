@@ -12,6 +12,7 @@ import 'features/game/domain/entities/game_timer.dart';
 import 'features/game/domain/entities/move.dart';
 import 'features/game/domain/entities/move_history.dart';
 import 'features/game/domain/entities/user_settings.dart';
+import 'features/game/domain/services/hint_service.dart';
 import 'features/game/domain/services/puzzle_generator.dart';
 import 'features/game/presentation/screens/settings_screen.dart';
 import 'features/game/presentation/screens/statistics_screen.dart';
@@ -71,6 +72,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   final _persistenceService = GamePersistenceService();
   final _statisticsService = StatisticsService();
   final _settingsService = SettingsService();
+  final _hintService = HintService();
   Difficulty _currentDifficulty = Difficulty.easy;
   Board? _board;
   Board? _originalBoard; // Store original for restart
@@ -82,6 +84,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
   bool _isLoading = true;
   final Map<String, Set<int>> _notes = {};
   UserSettings _settings = const UserSettings();
+  int _hintsRemaining = 0; // Updated based on difficulty
 
   @override
   void initState() {
@@ -109,6 +112,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
         _board = savedGame.board;
         _originalBoard = savedGame.originalBoard;
         _currentDifficulty = savedGame.difficulty;
+        _hintsRemaining = _getHintLimit(savedGame.difficulty);
         _notes
           ..clear()
           ..addAll(savedGame.notes);
@@ -123,6 +127,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
         _settings = settings;
         _board = _generator.generatePuzzle(_currentDifficulty);
         _originalBoard = _board;
+        _hintsRemaining = _getHintLimit(_currentDifficulty);
         _isLoading = false;
       });
     }
@@ -386,6 +391,81 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _saveGameState();
   }
 
+  void _handleHint() {
+    if (_board == null || _hintsRemaining <= 0) {
+      return;
+    }
+
+    final hint = _hintService.findBestHint(_board!);
+    if (hint == null) {
+      // No hint available (board complete or invalid)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No hints available!'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Select the hint cell and show candidates in a dialog
+    setState(() {
+      _selectedRow = hint.row;
+      _selectedCol = hint.col;
+      if (_hintsRemaining < 999) {
+        _hintsRemaining--;
+      }
+    });
+
+    // Show hint dialog with candidates
+    if (mounted) {
+      showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('💡 Hint'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Cell at row ${hint.row + 1}, column ${hint.col + 1}',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  hint.candidates.length == 1
+                      ? 'Can only be: ${hint.candidates.first}'
+                      : 'Possible values: ${hint.candidates.toList()..sort()}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                if (_hintsRemaining < 999)
+                  Text(
+                    'Hints remaining: $_hintsRemaining',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Got it!'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
   void _handleUndo() {
     final move = _moveHistory.undo();
     if (move == null || _board == null) {
@@ -424,11 +504,26 @@ class _GameScreenState extends ConsumerState<GameScreen>
       _moveHistory.clear(); // Clear history when starting new puzzle
       _notes.clear(); // Clear all notes when starting new puzzle
       _isPaused = false; // Unpause if paused
+      _hintsRemaining = _getHintLimit(_currentDifficulty);
       _gameTimer
         ..reset() // Reset timer when starting new puzzle
         ..start(); // Start fresh timer
     });
     _saveGameState(); // Save new game
+  }
+
+  /// Get hint limit based on difficulty
+  int _getHintLimit(Difficulty difficulty) {
+    switch (difficulty) {
+      case Difficulty.easy:
+        return 999; // Effectively unlimited
+      case Difficulty.medium:
+        return 5;
+      case Difficulty.hard:
+        return 3;
+      case Difficulty.expert:
+        return 1;
+    }
   }
 
   void _handlePause() {
@@ -458,6 +553,7 @@ class _GameScreenState extends ConsumerState<GameScreen>
       _moveHistory.clear(); // Clear all moves
       _notes.clear(); // Clear all notes
       _isPaused = false; // Unpause if paused
+      _hintsRemaining = _getHintLimit(_currentDifficulty);
       _gameTimer
         ..reset()
         ..start(); // Restart timer
@@ -614,17 +710,18 @@ class _GameScreenState extends ConsumerState<GameScreen>
                       _isNotesMode = !_isNotesMode;
                     });
                   },
-                  onHint: null, // TODO: Implement hint in Phase 4
+                  onHint: _hintsRemaining > 0 ? _handleHint : null,
                   onErase: _selectedRow != null && _selectedCol != null
                       ? _handleErase
                       : null,
                   canUndo: _moveHistory.canUndo,
                   isNotesMode: _isNotesMode,
-                  // canUseHint: false, // Default value, no need to set
+                  canUseHint: _hintsRemaining > 0,
                   canErase: _selectedRow != null &&
                       _selectedCol != null &&
                       _board != null &&
                       !_board!.cells[_selectedRow!][_selectedCol!].isFixed,
+                  hintCount: _hintsRemaining < 999 ? _hintsRemaining : null,
                 ),
                 // Number Pad (3x3 grid)
                 SizedBox(

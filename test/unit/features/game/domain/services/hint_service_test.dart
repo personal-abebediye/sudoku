@@ -19,10 +19,8 @@ void main() {
       });
 
       test('should exclude numbers in same row', () {
-        final board = Board.empty()
-            .setCell(0, 0, 1)
-            .setCell(0, 1, 2)
-            .setCell(0, 2, 3);
+        final board =
+            Board.empty().setCell(0, 0, 1).setCell(0, 1, 2).setCell(0, 2, 3);
 
         final candidates = hintService.calculateCandidates(board, 0, 3);
 
@@ -33,10 +31,8 @@ void main() {
       });
 
       test('should exclude numbers in same column', () {
-        final board = Board.empty()
-            .setCell(0, 0, 1)
-            .setCell(1, 0, 2)
-            .setCell(2, 0, 3);
+        final board =
+            Board.empty().setCell(0, 0, 1).setCell(1, 0, 2).setCell(2, 0, 3);
 
         final candidates = hintService.calculateCandidates(board, 3, 0);
 
@@ -47,10 +43,8 @@ void main() {
       });
 
       test('should exclude numbers in same 3x3 box', () {
-        final board = Board.empty()
-            .setCell(0, 0, 1)
-            .setCell(0, 1, 2)
-            .setCell(1, 0, 3);
+        final board =
+            Board.empty().setCell(0, 0, 1).setCell(0, 1, 2).setCell(1, 0, 3);
 
         final candidates = hintService.calculateCandidates(board, 1, 1);
 
@@ -86,7 +80,8 @@ void main() {
         var board = Board.empty();
         for (var row = 0; row < 9; row++) {
           for (var col = 0; col < 9; col++) {
-            board = board.setCell(row, col, ((row * 3 + row ~/ 3 + col) % 9) + 1);
+            board =
+                board.setCell(row, col, ((row * 3 + row ~/ 3 + col) % 9) + 1);
           }
         }
 
@@ -141,7 +136,8 @@ void main() {
         expect(hint.candidates, {9});
       });
 
-      test('should prefer cells with fewer candidates over more candidates', () {
+      test('should prefer cells with fewer candidates over more candidates',
+          () {
         // Cell (1, 1) should have fewer candidates than (8, 8)
         final board = Board.empty()
             .setCell(0, 1, 1)
@@ -153,10 +149,8 @@ void main() {
 
         expect(hint, isNotNull);
         // Should prioritize (1,1) which has most constraints
-        final candidates11 =
-            hintService.calculateCandidates(board, 1, 1);
-        final candidates88 =
-            hintService.calculateCandidates(board, 8, 8);
+        final candidates11 = hintService.calculateCandidates(board, 1, 1);
+        final candidates88 = hintService.calculateCandidates(board, 8, 8);
 
         expect(candidates11.length, lessThan(candidates88.length));
       });

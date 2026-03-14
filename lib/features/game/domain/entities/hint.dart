@@ -22,6 +22,5 @@ class Hint {
   int get hashCode => row.hashCode ^ col.hashCode;
 
   @override
-  String toString() =>
-      'Hint(row: $row, col: $col, candidates: $candidates)';
+  String toString() => 'Hint(row: $row, col: $col, candidates: $candidates)';
 }
