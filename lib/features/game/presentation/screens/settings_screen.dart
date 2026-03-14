@@ -205,6 +205,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return 'Light';
       case AppThemeMode.dark:
         return 'Dark';
+      case AppThemeMode.darkModern:
+        return 'Dark Modern';
       case AppThemeMode.highContrast:
         return 'High Contrast';
       case AppThemeMode.system:

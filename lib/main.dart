@@ -40,11 +40,15 @@ class SudokuApp extends ConsumerWidget {
         ? AppTheme.highContrastTheme
         : AppTheme.lightTheme;
 
+    final darkTheme = appThemeMode == AppThemeMode.darkModern
+        ? AppTheme.darkModernTheme
+        : AppTheme.darkTheme;
+
     return MaterialApp(
       title: 'Sudoku',
       debugShowCheckedModeBanner: false,
       theme: lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      darkTheme: darkTheme,
       themeMode: appThemeMode.toThemeMode(),
       home: const GameScreen(),
     );

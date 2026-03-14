@@ -86,7 +86,7 @@ void main() {
 
       // Check dialog appears
       expect(find.text('Select Theme'), findsOneWidget);
-      expect(find.byType(RadioListTile<AppThemeMode>), findsNWidgets(4));
+      expect(find.byType(RadioListTile<AppThemeMode>), findsNWidgets(5));
     });
 
     testWidgets('should change theme via dialog', (WidgetTester tester) async {
