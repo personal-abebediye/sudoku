@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sudoku/core/theme/app_theme.dart';
 
+// ignore_for_file: avoid_redundant_argument_values, prefer_int_literals
+
 /// Modern 3x3 grid number pad widget (numbers 1-9 only)
 class NumberPadGridWidget extends StatelessWidget {
   const NumberPadGridWidget({
