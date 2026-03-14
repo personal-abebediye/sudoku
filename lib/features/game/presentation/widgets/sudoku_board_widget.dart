@@ -26,7 +26,7 @@ class SudokuBoardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // Calculate size based on available space
@@ -97,7 +97,7 @@ class SudokuBoardWidget extends StatelessWidget {
     final boxBackgrounds = <Widget>[];
     const boxSize = AppConstants.boxSize; // 3
     final boxDimension = cellSize * boxSize;
-    
+
     // Purple color from design
     const purpleBoxColor = Color(0xFF2d1b69);
 
@@ -156,9 +156,11 @@ class SudokuCellWidget extends StatelessWidget {
     // Determine if this cell is on a 3x3 box boundary
     final isTopBoxBorder = row % AppConstants.boxSize == 0;
     final isLeftBoxBorder = col % AppConstants.boxSize == 0;
-    final isBottomBoxBorder = (row + 1) % AppConstants.boxSize == 0 || row == AppConstants.boardSize - 1;
-    final isRightBoxBorder = (col + 1) % AppConstants.boxSize == 0 || col == AppConstants.boardSize - 1;
-    
+    final isBottomBoxBorder = (row + 1) % AppConstants.boxSize == 0 ||
+        row == AppConstants.boardSize - 1;
+    final isRightBoxBorder = (col + 1) % AppConstants.boxSize == 0 ||
+        col == AppConstants.boardSize - 1;
+
     // Box border color (darker for better visibility)
     const boxBorderColor = Color(0xFF5a5a7c);
     const cellBorderColor = Color(0xFF3a3a5c);
@@ -170,8 +172,8 @@ class SudokuCellWidget extends StatelessWidget {
           color: _getBackgroundColor(colorScheme, 0),
           border: Border(
             top: BorderSide(
-              color: isSelected 
-                  ? colorScheme.primary 
+              color: isSelected
+                  ? colorScheme.primary
                   : (isTopBoxBorder ? boxBorderColor : cellBorderColor),
               width: isSelected && isTopBoxBorder
                   ? 3.0
@@ -180,8 +182,8 @@ class SudokuCellWidget extends StatelessWidget {
                       : 1.0,
             ),
             left: BorderSide(
-              color: isSelected 
-                  ? colorScheme.primary 
+              color: isSelected
+                  ? colorScheme.primary
                   : (isLeftBoxBorder ? boxBorderColor : cellBorderColor),
               width: isSelected && isLeftBoxBorder
                   ? 3.0
@@ -190,8 +192,8 @@ class SudokuCellWidget extends StatelessWidget {
                       : 1.0,
             ),
             bottom: BorderSide(
-              color: isSelected 
-                  ? colorScheme.primary 
+              color: isSelected
+                  ? colorScheme.primary
                   : (isBottomBoxBorder ? boxBorderColor : cellBorderColor),
               width: isSelected
                   ? 3.0
@@ -200,8 +202,8 @@ class SudokuCellWidget extends StatelessWidget {
                       : 1.0,
             ),
             right: BorderSide(
-              color: isSelected 
-                  ? colorScheme.primary 
+              color: isSelected
+                  ? colorScheme.primary
                   : (isRightBoxBorder ? boxBorderColor : cellBorderColor),
               width: isSelected
                   ? 3.0

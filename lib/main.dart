@@ -625,6 +625,28 @@ class _GameScreenState extends ConsumerState<GameScreen>
     }
   }
 
+  /// Build timer display for AppBar title
+  Widget _buildTimerTitle() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'TIMER',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: 2),
+        TimerDisplay(
+          timer: _gameTimer,
+          showIcon: false, // Don't show icon in AppBar
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Show loading screen while game loads
@@ -641,11 +663,19 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sudoku'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Menu',
+          onPressed: _isPaused ? null : _handlePause, // Open pause menu
+        ),
+        title: _settings.showTimer ? _buildTimerTitle() : const Text('Sudoku'),
         centerTitle: true,
         actions: [
-          // Timer Display (if enabled) - positioned before actions
-          if (_settings.showTimer) TimerDisplay(timer: _gameTimer),
+          IconButton(
+            icon: const Icon(Icons.lightbulb_outline),
+            tooltip: 'Hint',
+            onPressed: _hintsRemaining > 0 ? _handleHint : null,
+          ),
           IconButton(
             icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
             tooltip: _isPaused ? 'Resume' : 'Pause',
@@ -800,9 +830,14 @@ class _GameScreenState extends ConsumerState<GameScreen>
 
 /// Widget that displays the game timer with real-time updates
 class TimerDisplay extends StatefulWidget {
-  const TimerDisplay({required this.timer, super.key});
+  const TimerDisplay({
+    required this.timer,
+    this.showIcon = true,
+    super.key,
+  });
 
   final GameTimer timer;
+  final bool showIcon;
 
   @override
   State<TimerDisplay> createState() => _TimerDisplayState();
@@ -838,8 +873,10 @@ class _TimerDisplayState extends State<TimerDisplay>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.timer_outlined, size: 20),
-            const SizedBox(width: 4),
+            if (widget.showIcon) ...[
+              const Icon(Icons.timer_outlined, size: 20),
+              const SizedBox(width: 4),
+            ],
             Text(
               widget.timer.format(),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
