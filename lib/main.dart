@@ -16,7 +16,8 @@ import 'features/game/domain/services/puzzle_generator.dart';
 import 'features/game/presentation/screens/settings_screen.dart';
 import 'features/game/presentation/screens/statistics_screen.dart';
 import 'features/game/presentation/screens/tutorial_screen.dart';
-import 'features/game/presentation/widgets/number_pad_widget.dart';
+import 'features/game/presentation/widgets/game_control_bar.dart';
+import 'features/game/presentation/widgets/number_pad_grid_widget.dart';
 import 'features/game/presentation/widgets/sudoku_board_widget.dart';
 import 'shared/providers/theme_provider.dart';
 
@@ -351,6 +352,40 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _saveGameState(); // Save after move
   }
 
+  void _handleErase() {
+    if (_selectedRow == null || _selectedCol == null || _board == null) {
+      return;
+    }
+
+    final row = _selectedRow!;
+    final col = _selectedCol!;
+
+    // Don't allow erase on fixed cells
+    if (_board!.cells[row][col].isFixed) {
+      return;
+    }
+
+    final oldValue = _board!.cells[row][col].value;
+    final cellKey = '$row,$col';
+
+    // Clear both value and notes
+    if (oldValue != 0) {
+      _moveHistory.push(Move(
+        row: row,
+        col: col,
+        oldValue: oldValue,
+        newValue: 0,
+      ));
+    }
+
+    setState(() {
+      _board = _board!.setCell(row, col, 0);
+      _notes.remove(cellKey); // Also clear notes
+      _updateErrors();
+    });
+    _saveGameState();
+  }
+
   void _handleUndo() {
     final move = _moveHistory.undo();
     if (move == null || _board == null) {
@@ -364,6 +399,8 @@ class _GameScreenState extends ConsumerState<GameScreen>
     _saveGameState(); // Save after undo
   }
 
+  // Redo functionality preserved for future use (not in current UI)
+  // ignore: unused_element
   void _handleRedo() {
     final move = _moveHistory.redo();
     if (move == null || _board == null) {
@@ -545,26 +582,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
             },
           ),
           IconButton(
-            icon: Icon(_isNotesMode ? Icons.edit : Icons.edit_outlined),
-            tooltip: _isNotesMode ? 'Notes Mode (ON)' : 'Notes Mode (OFF)',
-            onPressed: () {
-              setState(() {
-                _isNotesMode = !_isNotesMode;
-              });
-            },
-            color: _isNotesMode ? Theme.of(context).colorScheme.primary : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.undo),
-            tooltip: 'Undo',
-            onPressed: _moveHistory.canUndo ? _handleUndo : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.redo),
-            tooltip: 'Redo',
-            onPressed: _moveHistory.canRedo ? _handleRedo : null,
-          ),
-          IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'New Game',
             onPressed: _showDifficultyDialog,
@@ -581,52 +598,68 @@ class _GameScreenState extends ConsumerState<GameScreen>
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: _isPaused
-              ? _buildPausedOverlay()
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Sudoku Board
-                    Expanded(
-                      flex: 2,
-                      child: Center(
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: SudokuBoardWidget(
-                            board: _board!,
-                            selectedRow: _selectedRow,
-                            selectedCol: _selectedCol,
-                            errorCells: _errorCells,
-                            notes: _notes,
-                            onCellSelected: (row, col) {
-                              setState(() {
-                                _selectedRow = row;
-                                _selectedCol = col;
-                              });
-                            },
-                          ),
+      body: _isPaused
+          ? _buildPausedOverlay()
+          : Column(
+              children: [
+                // Sudoku Board
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: SudokuBoardWidget(
+                          board: _board!,
+                          selectedRow: _selectedRow,
+                          selectedCol: _selectedCol,
+                          errorCells: _errorCells,
+                          notes: _notes,
+                          onCellSelected: (row, col) {
+                            setState(() {
+                              _selectedRow = row;
+                              _selectedCol = col;
+                            });
+                          },
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    // Number Pad
-                    Expanded(
-                      child: NumberPadWidget(
-                        onNumberSelected: _handleNumberSelected,
-                        selectedNumber: _selectedRow != null &&
-                                _selectedCol != null &&
-                                _board != null
-                            ? _board!.cells[_selectedRow!][_selectedCol!].value
-                            : null,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-        ),
-      ),
+                // Control Bar
+                GameControlBar(
+                  onUndo: _moveHistory.canUndo ? _handleUndo : null,
+                  onToggleNotes: () {
+                    setState(() {
+                      _isNotesMode = !_isNotesMode;
+                    });
+                  },
+                  onHint: null, // TODO: Implement hint in Phase 4
+                  onErase: _selectedRow != null && _selectedCol != null
+                      ? _handleErase
+                      : null,
+                  canUndo: _moveHistory.canUndo,
+                  isNotesMode: _isNotesMode,
+                  // canUseHint: false, // Default value, no need to set
+                  canErase: _selectedRow != null &&
+                      _selectedCol != null &&
+                      _board != null &&
+                      !_board!.cells[_selectedRow!][_selectedCol!].isFixed,
+                ),
+                // Number Pad (3x3 grid)
+                SizedBox(
+                  height: 220,
+                  child: NumberPadGridWidget(
+                    onNumberSelected: _handleNumberSelected,
+                    selectedNumber: _selectedRow != null &&
+                            _selectedCol != null &&
+                            _board != null
+                        ? _board!.cells[_selectedRow!][_selectedCol!].value
+                        : null,
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
