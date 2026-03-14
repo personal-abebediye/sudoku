@@ -546,19 +546,14 @@ class _GameScreenState extends ConsumerState<GameScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sudoku'),
+        centerTitle: true,
         actions: [
-          // Timer Display (if enabled)
+          // Timer Display (if enabled) - positioned before actions
           if (_settings.showTimer) TimerDisplay(timer: _gameTimer),
           IconButton(
-            icon: const Icon(Icons.bar_chart),
-            tooltip: 'Statistics',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (context) => const StatisticsScreen(),
-                ),
-              );
-            },
+            icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
+            tooltip: _isPaused ? 'Resume' : 'Pause',
+            onPressed: _isPaused ? _handleResume : _handlePause,
           ),
           IconButton(
             icon: const Icon(Icons.settings),
@@ -580,21 +575,6 @@ class _GameScreenState extends ConsumerState<GameScreen>
                     newSettings.themeMode;
               }
             },
-          ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'New Game',
-            onPressed: _showDifficultyDialog,
-          ),
-          IconButton(
-            icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause),
-            tooltip: _isPaused ? 'Resume' : 'Pause',
-            onPressed: _isPaused ? _handleResume : _handlePause,
-          ),
-          IconButton(
-            icon: const Icon(Icons.restart_alt),
-            tooltip: 'Restart Puzzle',
-            onPressed: _handleRestart,
           ),
         ],
       ),
@@ -684,18 +664,36 @@ class _GameScreenState extends ConsumerState<GameScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Tap Resume to continue',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 48),
+          // Action buttons
           FilledButton.icon(
             onPressed: _handleResume,
             icon: const Icon(Icons.play_arrow),
             label: const Text('Resume Game'),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: _handleRestart,
+            icon: const Icon(Icons.restart_alt),
+            label: const Text('Restart Puzzle'),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: _showDifficultyDialog,
+            icon: const Icon(Icons.add),
+            label: const Text('New Game'),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (context) => const StatisticsScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.bar_chart),
+            label: const Text('Statistics'),
           ),
         ],
       ),
